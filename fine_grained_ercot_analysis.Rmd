@@ -1,0 +1,1051 @@
+---
+title: "Fuel Mix Report Analytics"
+output: html_notebook
+---
+
+Analytics on ERCOT Fuel Mix Reports, hopefully to give better/more granular data on the difference of temporal variation on the relationship between fuel sources in ERCOT.
+
+```{r}
+# imports
+library(ggplot2)
+library(reshape2)
+library(readxl)
+library(readr)
+library(hrbrthemes)
+library(tidyverse)
+library(tidyquant)
+library(GGally)
+library(dplyr)
+library(plyr)
+library(mlbench)
+```
+
+A clean environment is a happy environment.
+
+
+```{r}
+rm(list=ls())
+```
+
+
+Pulling in 2007 data
+
+```{r}
+Jan_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jan2007", range = "A1:B186")
+Feb_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Feb2007", range = "A1:B186")
+Mar_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Mar2007", range = "A1:B186")
+Apr_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Apr2007", range = "A1:B186")
+May_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "May2007", range = "A1:B186")
+Jun_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jun2007", range = "A1:B186")
+Jul_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jul2007", range = "A1:B186")
+Aug_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Aug2007", range = "A1:B186")
+Sep_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Sep2007", range = "A1:B186")
+Oct_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Oct2007", range = "A1:B186")
+Nov_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Nov2007", range = "A1:B186")
+Dec_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Dec2007", range = "A1:B186")
+```
+
+```{r}
+# Little parser script tailored to the formatting of the 2007 excel sheer
+
+parser2007 <- function(month){
+newColNames <- c("Date", "Fuel")
+newCols <- colsplit(month$`Date - Fuel`, " - ", newColNames)
+after <- cbind(month, newCols)
+after$`Date - Fuel` <- NULL
+after$Date <- as.Date(after$Date , format = "%m/%d/%y")
+after$Total <- after$`Daily MWH`
+after$`Daily MWH` <- NULL
+return(after)
+}
+
+
+```
+
+```{r}
+# Put all 2007 months in a list, apply the parser to them, then concatenate them all into the datafram fuelmix_2007
+
+list.2007 <- list(Jan_2007, Feb_2007, Mar_2007, Apr_2007, May_2007, Jun_2007, Jul_2007, Aug_2007, Sep_2007, Oct_2007, Nov_2007, Dec_2007)
+
+res <- lapply(list.2007, 'parser2007')
+
+fuelmix_2007 = do.call(rbind, res)
+
+#cleanup
+rm(list.2007, Jan_2007, Feb_2007, Mar_2007, Apr_2007, May_2007, Jun_2007, Jul_2007, Aug_2007, Sep_2007, Oct_2007, Nov_2007, Dec_2007)
+```
+
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2007, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+Ok, 2007 looks fine. Now going to do the same (with some modifications) for 2008 data.
+
+Pulling in 2008 data
+
+```{r}
+# Jan is formatted differently than the others, so it gets special processing. Oy vey.
+Jan_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jan2008", range = "A1:B300")
+Jan_2008$DateFuel <- Jan_2008$`Date - Fuel`
+Jan_2008$`Date - Fuel` <- NULL
+Jan_2008$Total <-  Jan_2008$`Daily MWH` 
+Jan_2008$`Daily MWH` <- NULL
+Feb_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Feb2008", range = "A1:B300")
+Mar_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Mar2008", range = "A1:B300")
+Apr_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Apr2008", range = "A1:B300")
+May_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "May2008", range = "A1:B300")
+Jun_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jun2008", range = "A1:B300")
+Jul_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jul2008", range = "A1:B300")
+Aug_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Aug2008", range = "A1:B300")
+Sep_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Sep2008", range = "A1:B300")
+Oct_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Oct2008", range = "A1:B300")
+Nov_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Nov2008", range = "A1:B300")
+Dec_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Dec2008", range = "A1:B300")
+```
+
+```{r}
+# Little parser script tailored to the formatting of the 2008 excel sheets
+
+parser2008 <- function(month){
+  month <- na.omit(month)
+  newColNames <- c("Date", "Fuel")
+  newCols <- colsplit(month$DateFuel, "-", newColNames)
+  after <- cbind(month, newCols)
+  after$DateFuel <- NULL
+  after$Date <- as.Date(after$Date , format = "%m/%d/%y")
+  return(after)
+}
+
+
+```
+
+
+```{r}
+# Put all 2008 months in a list, apply the parser to them, then concatenate them all into the dataframe fuelmix_2008
+
+list.2008 <- list(Jan_2008, Feb_2008, Mar_2008, Apr_2008, May_2008, Jun_2008, Jul_2008, Aug_2008, Sep_2008, Oct_2008, Nov_2008, Dec_2008)
+
+res <- lapply(list.2008, 'parser2008')
+
+fuelmix_2008 = do.call(rbind, res)
+
+# different formatting lead to some leading whitespace for some fuel values... trimming it
+
+fuelmix_2008$Fuel <- str_trim(fuelmix_2008$Fuel)
+
+#cleanup
+rm(list.2008, Jan_2008, Feb_2008, Mar_2008, Apr_2008, May_2008, Jun_2008, Jul_2008, Aug_2008, Sep_2008, Oct_2008, Nov_2008, Dec_2008)
+
+```
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2008, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+Looks good. Great. Now, onto 2009.
+
+
+Pulling in 2009 data
+
+```{r}
+# Now, Dec is formatted differently than the others, so it gets special processing. Oy vey.
+Jan_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jan09", range = "A1:B300")
+Feb_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Feb09", range = "A1:B300")
+Mar_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Mar09", range = "A1:B300")
+Apr_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Apr09", range = "A1:B300")
+May_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "May09", range = "A1:B300")
+Jun_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jun09", range = "A1:B300")
+Jul_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jul09", range = "A1:B300")
+Aug_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Aug09", range = "A1:B300")
+Sep_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Sep09", range = "A1:B300")
+Oct_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Oct09", range = "A1:B300")
+Nov_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Nov09", range = "A1:B300")
+Dec_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Dec09", range = "A1:B300")
+Dec_2009$DateFuel <- Dec_2009$`Date-Fuel`
+Dec_2009$`Date-Fuel` <- NULL
+```
+
+```{r}
+# Little parser script tailored to the formatting of the 2009 excel sheets. Now with string trimming in the parser, not that it makes much difference
+
+parser2009 <- function(month){
+  month <- na.omit(month)
+  newColNames <- c("Date", "Fuel")
+  newCols <- colsplit(month$DateFuel, "-", newColNames)
+  after <- cbind(month, newCols)
+  after$DateFuel <- NULL
+  after$Date <- as.Date(after$Date , format = "%m/%d/%y")
+  after$Fuel <- str_trim(after$Fuel)
+  return(after)
+}
+
+
+```
+
+
+```{r}
+# Put all 2009 months in a list, apply the parser to them, then concatenate them all into the dataframe fuelmix_2009
+
+list.2009 <- list(Jan_2009, Feb_2009, Mar_2009, Apr_2009, May_2009, Jun_2009, Jul_2009, Aug_2009, Sep_2009, Oct_2009, Nov_2009, Dec_2009)
+
+res <- lapply(list.2009, 'parser2009')
+
+fuelmix_2009 = do.call(rbind, res)
+
+#cleanup
+rm(list.2009, Jan_2009, Feb_2009, Mar_2009, Apr_2009, May_2009, Jun_2009, Jul_2009, Aug_2009, Sep_2009, Oct_2009, Nov_2009, Dec_2009)
+
+```
+
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2009, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+
+Nice. Looks to be in order. Onward!
+
+```{r}
+# Pick a column header and stick with it, dangit!
+Jan_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jan10", range = "A1:B300")
+Jan_2010$`Date-Fuel` <- Jan_2010$DateFuel
+Jan_2010$DateFuel <- NULL
+Feb_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Feb10", range = "A1:B300")
+Feb_2010$`Date-Fuel` <- Feb_2010$DateFuel
+Feb_2010$DateFuel <- NULL
+Mar_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Mar10", range = "A1:B300")
+Apr_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Apr10", range = "A1:B300")
+May_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "May10", range = "A1:B300")
+Jun_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jun10", range = "A1:B300")
+Jul_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jul10", range = "A1:B300")
+Aug_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Aug10", range = "A1:B300")
+Sep_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Sep10", range = "A1:B300")
+Oct_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Oct10", range = "A1:B300")
+Nov_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Nov10", range = "A1:B300")
+Dec_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Dec10", range = "A1:B300")
+```
+
+```{r}
+# Little parser script tailored to the formatting of the 2010 excel sheets.
+
+parser2010 <- function(month){
+  month <- na.omit(month)
+  newColNames <- c("Date", "Fuel")
+  newCols <- colsplit(month$`Date-Fuel`, "-", newColNames)
+  after <- cbind(month, newCols)
+  after$`Date-Fuel` <- NULL
+  after$Date <- as.Date(after$Date , format = "%m/%d/%y")
+  after$Fuel <- str_trim(after$Fuel)
+  return(after)
+}
+```
+
+```{r}
+
+# Put all 2009 months in a list, apply the parser to them, then concatenate them all into the dataframe fuelmix_2009
+
+list.2010 <- list(Jan_2010, Feb_2010, Mar_2010, Apr_2010, May_2010, Jun_2010, Jul_2010, Aug_2010, Sep_2010, Oct_2010, Nov_2010, Dec_2010)
+
+res <- lapply(list.2010, 'parser2010')
+
+fuelmix_2010 = do.call(rbind, res)
+
+#cleanup
+rm(list.2010, Jan_2010, Feb_2010, Mar_2010, Apr_2010, May_2010, Jun_2010, Jul_2010, Aug_2010, Sep_2010, Oct_2010, Nov_2010, Dec_2010)
+
+```
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2010, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+Starting to see some days where wind is higher than coal. Sweet!
+
+Next, 2011. These columns are pre-split for me! Wow, huzzah!
+
+```{r}
+Jan_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jan11", range = "A1:C250")
+Feb_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Feb11", range = "A1:C250")
+Mar_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Mar11", range = "A1:C250")
+Apr_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Apr11", range = "A1:C250")
+May_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "May11", range = "A1:C250")
+Jun_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jun11", range = "A1:C250")
+Jul_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jul11", range = "A1:C250")
+Aug_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Aug11", range = "A1:C250")
+Sep_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Sep11", range = "A1:C250")
+Oct_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Oct11", range = "A1:C250")
+Nov_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Nov11", range = "A1:C250")
+Dec_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Dec11", range = "A1:C250")
+```
+
+No custom parser necessary, as all the processing we need to do here can be handled by na.omit.
+
+```{r}
+
+# Put all 2011 months in a list, apply the parser to them, then concatenate them all into the dataframe fuelmix_2011
+
+list.2011 <- list(Jan_2011, Feb_2011, Mar_2011, Apr_2011, May_2011, Jun_2011, Jul_2011, Aug_2011, Sep_2011, Oct_2011, Nov_2011, Dec_2011)
+
+res <- lapply(list.2011, 'na.omit')
+
+fuelmix_2011 = do.call(rbind, res)
+
+#cleanup
+rm(list.2011, Jan_2011, Feb_2011, Mar_2011, Apr_2011, May_2011, Jun_2011, Jul_2011, Aug_2011, Sep_2011, Oct_2011, Nov_2011, Dec_2011)
+
+```
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2011, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+Ok, barring the solar/sun thing, which we'll sort out later, next we go to 2012!
+
+```{r}
+Jan_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jan12", range = "A1:B300")
+Feb_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Feb12", range = "A1:B300")
+Mar_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Mar12", range = "A1:B300")
+Apr_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Apr12", range = "A1:B300")
+May_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "May12", range = "A1:B300")
+Jun_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jun12", range = "A1:B300")
+Jul_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jul12", range = "A1:B300")
+Aug_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Aug12", range = "A1:B300")
+Sep_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Sep12", range = "A1:B300")
+Oct_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Oct12", range = "A1:B300")
+Nov_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Nov12", range = "A1:B300")
+Dec_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Dec12", range = "A1:B300")
+```
+
+Some annoying stuff here, where we're going to have to parse half of the year differently form the other half, due to a change in delimiter from '-' to '_'...
+
+```{r}
+# Little parser script tailored to the formatting of the 2010 excel sheets.
+
+parser2012a <- function(month){
+  month <- na.omit(month)
+  newColNames <- c("Date", "Fuel")
+  newCols <- colsplit(month$`Date-Fuel`, "-", newColNames)
+  after <- cbind(month, newCols)
+  after$`Date-Fuel` <- NULL
+  after$Date <- as.Date(after$Date , format = "%m/%d/%y")
+  after$Fuel <- str_trim(after$Fuel)
+  return(after)
+}
+
+parser2012b <- function(month){
+  month <- na.omit(month)
+  newColNames <- c("Date", "Fuel")
+  newCols <- colsplit(month$`Date-Fuel`, "_", newColNames)
+  after <- cbind(month, newCols)
+  after$`Date-Fuel` <- NULL
+  after$Date <- as.Date(after$Date , format = "%m/%d/%y")
+  after$Fuel <- str_trim(after$Fuel)
+  return(after)
+}
+```
+
+
+```{r}
+list.2012a <- list(Jan_2012, Feb_2012, Mar_2012, Apr_2012, Jun_2012)
+
+list.2012b <- list(May_2012, Jul_2012, Aug_2012, Sep_2012, Oct_2012, Nov_2012, Dec_2012)
+
+res.a <- lapply(list.2012a, 'parser2012a')
+res.b <- lapply(list.2012b, 'parser2012b')
+
+res <- c(res.a, res.b)
+
+
+fuelmix_2012 <-  do.call(rbind, res)
+
+#cleanup
+rm(list.2012a, list.2012b, Jan_2012, Feb_2012, Mar_2012, Apr_2012, May_2012, Jun_2012, Jul_2012, Aug_2012, Sep_2012, Oct_2012, Nov_2012, Dec_2012)
+
+```
+
+
+```{r}
+ggplot(fuelmix_2012, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+```
+
+OK, now 2013.
+
+```{r}
+Jan_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jan13", range = "A1:B300")
+Feb_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Feb13", range = "A1:B300")
+Mar_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Mar13", range = "A1:B300")
+Apr_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Apr13", range = "A1:B300")
+May_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "May13", range = "A1:B300")
+Jun_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jun13", range = "A1:B300")
+Jul_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jul13", range = "A1:B300")
+Aug_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Aug13", range = "A1:B300")
+Sep_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Sep13", range = "A1:B300")
+Oct_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Oct13", range = "A1:B300")
+Nov_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Nov13", range = "A1:B300")
+Dec_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Dec13", range = "A1:B300")
+```
+
+parser2012b works with this data, so I won't define a new one.
+
+```{r}
+list.2013 <- list(Jan_2013, Feb_2013, Mar_2013, Apr_2013, May_2013, Jun_2013, Jul_2013, Aug_2013, Sep_2013, Oct_2013, Nov_2013, Dec_2013)
+
+res <- lapply(list.2013, 'parser2012b')
+
+fuelmix_2013 <-  do.call(rbind, res)
+
+#cleanup
+rm(list.2013, Jan_2013, Feb_2013, Mar_2013, Apr_2013, May_2013, Jun_2013, Jul_2013, Aug_2013, Sep_2013, Oct_2013, Nov_2013, Dec_2013)
+
+
+```
+
+```{r}
+ggplot(fuelmix_2013, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+```
+
+OK, now 2014. Bless consistent formatting
+
+```{r}
+Jan_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jan14", range = "A1:B300")
+Feb_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Feb14", range = "A1:B300")
+Mar_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Mar14", range = "A1:B300")
+Apr_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Apr14", range = "A1:B300")
+May_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "May14", range = "A1:B300")
+Jun_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jun14", range = "A1:B300")
+Jul_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jul14", range = "A1:B300")
+Aug_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Aug14", range = "A1:B300")
+Sep_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Sep14", range = "A1:B300")
+Oct_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Oct14", range = "A1:B300")
+Nov_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Nov14", range = "A1:B300")
+Dec_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Dec14", range = "A1:B300")
+```
+
+parser2012b works with this data, so I won't define a new one.
+
+```{r}
+list.2014 <- list(Jan_2014, Feb_2014, Mar_2014, Apr_2014, May_2014, Jun_2014, Jul_2014, Aug_2014, Sep_2014, Oct_2014, Nov_2014, Dec_2014)
+
+res <- lapply(list.2014, 'parser2012b')
+
+fuelmix_2014 <-  do.call(rbind, res)
+
+#cleanup
+rm(list.2014, Jan_2014, Feb_2014, Mar_2014, Apr_2014, May_2014, Jun_2014, Jul_2014, Aug_2014, Sep_2014, Oct_2014, Nov_2014, Dec_2014)
+
+
+```
+
+```{r}
+ggplot(fuelmix_2014, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+```
+
+
+OK, now 2015. Bless consistent formatting
+
+```{r}
+Jan_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jan15", range = "A1:B300")
+Feb_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Feb15", range = "A1:B300")
+Mar_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Mar15", range = "A1:B300")
+Apr_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Apr15", range = "A1:B300")
+May_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "May15", range = "A1:B300")
+Jun_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jun15", range = "A1:B300")
+Jul_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jul15", range = "A1:B300")
+Aug_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Aug15", range = "A1:B300")
+Sep_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Sep15", range = "A1:B300")
+Oct_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Oct15", range = "A1:B300")
+Nov_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Nov15", range = "A1:B300")
+Dec_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Dec15", range = "A1:B300")
+```
+
+parser2012b works with this data, so I won't define a new one.
+
+```{r}
+list.2015 <- list(Jan_2015, Feb_2015, Mar_2015, Apr_2015, May_2015, Jun_2015, Jul_2015, Aug_2015, Sep_2015, Oct_2015, Nov_2015, Dec_2015)
+
+res <- lapply(list.2015, 'parser2012b')
+
+fuelmix_2015 <-  do.call(rbind, res)
+
+#cleanup
+rm(list.2015, Jan_2015, Feb_2015, Mar_2015, Apr_2015, May_2015, Jun_2015, Jul_2015, Aug_2015, Sep_2015, Oct_2015, Nov_2015, Dec_2015)
+
+
+```
+
+```{r}
+ggplot(fuelmix_2015, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+```
+
+OK, now 2016. Bless consistent formatting
+
+```{r}
+Jan_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jan16", range = "A1:B300")
+Feb_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Feb16", range = "A1:B300")
+Mar_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Mar16", range = "A1:B300")
+Apr_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Apr16", range = "A1:B300")
+May_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "May16", range = "A1:B300")
+Jun_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jun16", range = "A1:B300")
+Jul_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jul16", range = "A1:B300")
+Aug_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Aug16", range = "A1:B300")
+Sep_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Sep16", range = "A1:B300")
+Oct_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Oct16", range = "A1:B300")
+Nov_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Nov16", range = "A1:B300")
+Dec_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Dec16", range = "A1:B300")
+```
+
+parser2012b works with this data, so I won't define a new one.
+
+```{r}
+list.2016 <- list(Jan_2016, Feb_2016, Mar_2016, Apr_2016, May_2016, Jun_2016, Jul_2016, Aug_2016, Sep_2016, Oct_2016, Nov_2016, Dec_2016)
+
+res <- lapply(list.2016, 'parser2012b')
+
+fuelmix_2016 <-  do.call(rbind, res)
+
+#cleanup
+rm(list.2016, Jan_2016, Feb_2016, Mar_2016, Apr_2016, May_2016, Jun_2016, Jul_2016, Aug_2016, Sep_2016, Oct_2016, Nov_2016, Dec_2016)
+
+
+```
+
+```{r}
+ggplot(fuelmix_2016, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+```
+
+Next, 2017. These columns are pre-split for me! Wow, huzzah! Extra settlement type column needs to be trimmed though
+
+```{r}
+Jan_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jan", range = "A1:D300")
+Feb_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Feb", range = "A1:D300")
+Mar_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Mar", range = "A1:D300")
+Apr_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Apr", range = "A1:D300")
+May_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "May", range = "A1:D300")
+Jun_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jun", range = "A1:D300")
+Jul_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jul", range = "A1:D300")
+Aug_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Aug", range = "A1:D300")
+Sep_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Sep", range = "A1:D300")
+Oct_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Oct", range = "A1:D300")
+Nov_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Nov", range = "A1:D300")
+Dec_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Dec", range = "A1:D300")
+```
+
+```{r}
+# Little parser script tailored to the formatting of the 2017 excel sheets.
+
+parser2017 <- function(month){
+  month <- na.omit(month)
+  month$`Settlement Type` <- NULL
+  return(month)
+}
+```
+
+
+```{r}
+
+# Put all 2017 months in a list, apply the parser to them, then concatenate them all into the dataframe fuelmix_2017
+
+list.2017 <- list(Jan_2017, Feb_2017, Mar_2017, Apr_2017, May_2017, Jun_2017, Jul_2017, Aug_2017, Sep_2017, Oct_2017, Nov_2017, Dec_2017)
+
+res <- lapply(list.2017, parser2017)
+
+fuelmix_2017 = do.call(rbind, res)
+
+#cleanup
+rm(list.2017, Jan_2017, Feb_2017, Mar_2017, Apr_2017, May_2017, Jun_2017, Jul_2017, Aug_2017, Sep_2017, Oct_2017, Nov_2017, Dec_2017)
+
+```
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2017, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+Next, 2018. Same as 2017.
+
+```{r}
+Jan_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jan", range = "A1:D300")
+Feb_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Feb", range = "A1:D300")
+Mar_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Mar", range = "A1:D300")
+Apr_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Apr", range = "A1:D300")
+May_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "May", range = "A1:D300")
+Jun_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jun", range = "A1:D300")
+Jul_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jul", range = "A1:D300")
+Aug_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Aug", range = "A1:D300")
+Sep_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Sep", range = "A1:D300")
+Oct_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Oct", range = "A1:D300")
+Nov_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Nov", range = "A1:D300")
+Dec_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Dec", range = "A1:D300")
+```
+
+```{r}
+
+# Put all 2018 months in a list, apply the parser to them, then concatenate them all into the dataframe fuelmix_2018
+
+list.2018 <- list(Jan_2018, Feb_2018, Mar_2018, Apr_2018, May_2018, Jun_2018, Jul_2018, Aug_2018, Sep_2018, Oct_2018, Nov_2018, Dec_2018)
+
+res <- lapply(list.2018, parser2017)
+
+fuelmix_2018 = do.call(rbind, res)
+
+#cleanup
+rm(list.2018, Jan_2018, Feb_2018, Mar_2018, Apr_2018, May_2018, Jun_2018, Jul_2018, Aug_2018, Sep_2018, Oct_2018, Nov_2018, Dec_2018)
+
+```
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2018, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+Next, 2019. Same as 2017, 2018. Hurray for consistency.
+
+```{r}
+Jan_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jan", range = "A1:D300")
+Feb_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Feb", range = "A1:D300")
+Mar_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Mar", range = "A1:D300")
+Apr_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Apr", range = "A1:D300")
+May_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "May", range = "A1:D300")
+Jun_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jun", range = "A1:D300")
+Jul_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jul", range = "A1:D300")
+Aug_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Aug", range = "A1:D300")
+Sep_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Sep", range = "A1:D300")
+Oct_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Oct", range = "A1:D300")
+Nov_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Nov", range = "A1:D300")
+Dec_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Dec", range = "A1:D300")
+```
+
+```{r}
+
+# Put all 2019 months in a list, apply the parser to them, then concatenate them all into the dataframe fuelmix_2019
+
+list.2019 <- list(Jan_2019, Feb_2019, Mar_2019, Apr_2019, May_2019, Jun_2019, Jul_2019, Aug_2019, Sep_2019, Oct_2019, Nov_2019, Dec_2019)
+
+res <- lapply(list.2019, parser2017)
+
+fuelmix_2019 = do.call(rbind, res)
+
+#cleanup
+rm(list.2019, Jan_2019, Feb_2019, Mar_2019, Apr_2019, May_2019, Jun_2019, Jul_2019, Aug_2019, Sep_2019, Oct_2019, Nov_2019, Dec_2019)
+
+```
+
+```{r}
+#plotting for a sanity check
+
+ggplot(fuelmix_2019, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_point(size=1) +
+    theme_ipsum()
+
+```
+
+Here, we're going to bring in monthly gas prices in Texas (values in $/1000 ft^3), and spline them for smooth daily data.
+
+```{r}
+gas_price <- read_csv("Texas_Natural_Gas_Industrial_Price.csv", col_types = cols(Month = col_date(format = "%b %Y")), skip = 4)
+
+gas_price$Date <- gas_price$Month 
+gas_price$Gas_Price <- gas_price$`Texas Natural Gas Industrial Price  Dollars per Thousand Cubic Feet`
+
+gas_price$`Texas Natural Gas Industrial Price  Dollars per Thousand Cubic Feet` <- NULL
+gas_price$Month <- NULL
+
+#let's remove the rows with dates prior to 2007, as that's when our daily generation figures start
+gas_price<-gas_price[!(gas_price$Date<as.Date('2007-1-1')),]
+```
+
+# smoothing the monthly data to daily 
+# https://stackoverflow.com/questions/50167509/converting-monthly-data-to-daily-in-r
+
+```{r}
+# Pre-smoothed graph, just one point per month
+plot(x=gas_price$Date,y=gas_price$Gas_Price)
+
+gas_price.xts <- xts(gas_price$Gas_Price,order.by = gas_price$Date)
+
+
+#If smoothing is not desired, we can set every day's value to the same for a given month by changing na.spline to na.locf on the next line
+gas_price.xts <- na.spline(merge(gas_price.xts, foo=zoo(NA, order.by=seq(start(gas_price.xts), end(gas_price.xts),
+  "day",drop=F)))[, 1])
+
+gas_price <- data.frame(Date=index(gas_price.xts), Gas_Price=coredata(gas_price.xts))
+
+gas_price$Gas_Price <- gas_price$gas_price.xts
+gas_price$gas_price.xts <-  NULL
+
+# Post transformation graph, one point per day smoothed between monthly values
+plot(x=gas_price$Date,y=gas_price$Gas_Price)
+
+```
+
+Ok, now lets stick em all in the same dataframe!
+
+```{r}
+
+# Put all annual fuelmixes in a list, then concatenate them all into the dataframe ercot_tall
+
+list.years <- list(fuelmix_2007, fuelmix_2008, fuelmix_2009, fuelmix_2010, fuelmix_2011, fuelmix_2012, fuelmix_2013, fuelmix_2014, fuelmix_2015, fuelmix_2016, fuelmix_2017, fuelmix_2018, fuelmix_2019)
+
+ercot_tall = do.call(rbind, list.years)
+
+#cleanup
+rm(list.years, fuelmix_2007, fuelmix_2008, fuelmix_2009, fuelmix_2010, fuelmix_2011, fuelmix_2012, fuelmix_2013, fuelmix_2014, fuelmix_2015, fuelmix_2016, fuelmix_2017, fuelmix_2018, fuelmix_2019)
+
+```
+
+
+Great, now we have one big dataframe. Let's fix those annoying poorly labeled fuel types.
+
+```{r}
+refactor <- function(z) {
+  z[z == "Gas-CC"] <- "Gas"
+  z[z == "Gas_CC"] <- "Gas"
+  z[z == "Gas_GT"] <- "Gas"
+  z[z == "Oth"] <- "Other"
+  z[z == "Sun"] <- "Solar"
+  z[z == "Wnd"] <- "Wind"
+#  z[!(z %in% c("Yes", "No"))] <- NA
+  z
+}
+
+# relabeling Fuel column
+ercot_tall$Fuel <- fct_relabel(factor(ercot_tall$Fuel), refactor)
+
+# summing all gas entries for the same date
+ercot_tall <- aggregate(ercot_tall["Total"], by=c(ercot_tall["Date"],ercot_tall["Fuel"]), sum)
+```
+
+
+```{r}
+#plotting for a sanity check
+
+ggplot(ercot_tall, aes(x=Date, y=Total, color=Fuel)) + 
+    geom_smooth() +
+    theme_ipsum() +
+    scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+
+ggplot(ercot_tall, aes(x=Fuel, y=Total, color=Fuel)) +
+    geom_boxplot() +
+    theme_ipsum()
+```
+
+Now lets transform it for easier modeling.
+
+```{r}
+
+gas_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Gas"]), Gas = ercot_tall$Total[ercot_tall$Fuel == "Gas"])
+coal_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Coal"]), Coal = ercot_tall$Total[ercot_tall$Fuel == "Coal"])
+wind_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Wind"]), Wind = ercot_tall$Total[ercot_tall$Fuel == "Wind"])
+hydro_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Hydro"]), Hydro = ercot_tall$Total[ercot_tall$Fuel == "Hydro"])
+nuclear_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Nuclear"]), Nuclear = ercot_tall$Total[ercot_tall$Fuel == "Nuclear"])
+solar_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Solar"]), Solar = ercot_tall$Total[ercot_tall$Fuel == "Solar"])
+biomass_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Biomass"]), Biomass = ercot_tall$Total[ercot_tall$Fuel == "Biomass"])
+other_fuelmix = data.frame(Date = unique(ercot_tall$Date[ercot_tall$Fuel == "Other"]), Other = ercot_tall$Total[ercot_tall$Fuel == "Other"])
+
+all_dates = data.frame(Date = unique(ercot_tall$Date))
+
+```
+
+
+```{r}
+wip <- full_join(all_dates, gas_fuelmix, by = "Date")
+wip <- full_join(wip, coal_fuelmix, by = "Date")
+wip <- full_join(wip, wind_fuelmix, by = "Date")
+wip <- full_join(wip, hydro_fuelmix, by = "Date")
+wip <- full_join(wip, nuclear_fuelmix, by = "Date")
+wip <- full_join(wip, solar_fuelmix, by = "Date")
+wip <- full_join(wip, biomass_fuelmix, by = "Date")
+wip <- full_join(wip, other_fuelmix, by = "Date")
+wip <- full_join(wip, gas_price, by = "Date")
+
+#wip[is.na(wip)] <- 0
+
+ercot_wide <- wip
+
+rm(gas_fuelmix, coal_fuelmix, wind_fuelmix, hydro_fuelmix, nuclear_fuelmix, solar_fuelmix, biomass_fuelmix, other_fuelmix, wip, all_dates, res, res.a, res.b, parser2007, parser2008, parser2009, parser2010, parser2012a, parser2012b, parser2017, refactor)
+```
+
+
+
+
+
+```{r}
+
+lin.mod <- lm(Coal ~ Gas + Wind + Gas_Price, data = ercot_wide)
+summary(lin.mod)
+
+```
+
+```{r}
+ggplot(ercot_wide, aes(x=Gas, y=Coal)) + 
+    geom_smooth(method = loess) +
+    theme_ipsum()
+    #scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+
+ggplot(ercot_wide, aes(x=Wind, y=Coal)) + 
+    geom_smooth(method = loess) +
+    theme_ipsum()
+
+ggplot(ercot_wide, aes(x=Gas_Price, y=Coal)) + 
+    geom_smooth(method = loess) +
+    theme_ipsum()
+
+ggplot(ercot_wide, aes(x=Gas_Price, y=Wind)) + 
+    geom_smooth(method = loess) +
+    theme_ipsum()
+
+ggplot(ercot_wide, aes(x=Gas_Price, y=Gas)) + 
+    geom_smooth(method = loess) +
+    theme_ipsum()
+
+ggplot(ercot_tall, aes(x=Date, y=Total, color = Fuel)) +
+    geom_smooth() +
+    theme_ipsum()
+
+```
+
+```{r}
+getSeason <- function(DATES) {
+    WS <- as.Date("2012-12-1", format = "%Y-%m-%d") # Winter Solstice
+    SE <- as.Date("2012-3-1",  format = "%Y-%m-%d") # Spring Equinox
+    SS <- as.Date("2012-6-1",  format = "%Y-%m-%d") # Summer Solstice
+    FE <- as.Date("2012-9-1",  format = "%Y-%m-%d") # Fall Equinox
+
+    # Convert dates from any year to 2012 dates
+    d <- as.Date(strftime(DATES, format="2012-%m-%d"))
+
+    ifelse (d >= WS | d < SE, "winter",
+      ifelse (d >= SE & d < SS, "spring",
+        ifelse (d >= SS & d < FE, "summer", "fall")))
+}
+```
+
+```{r}
+
+ercot_tall$Season <- getSeason(ercot_tall$Date)
+ercot_wide$Season <- getSeason(ercot_wide$Date)
+
+```
+
+
+```{r}
+ggplot(ercot_wide, aes(x = Wind + Gas, y = Coal, color = Season)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation + Gas Plant Net Generation (GWh)", y = "Coal Net Generation (GWh)", color = "Season",
+       title = "Seasonal Variation of Coal performance in ERCOT", 
+  subtitle = "Coal net generation vs gas & wind net generation. Texas, 2007 - 2019. Data: ERCOT.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+```
+
+
+```{r}
+# creating & summarizing these linear models for ercot (no gas)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+
+lin.mod.winter <- lm(Coal ~ Gas + Wind + Gas_Price, data = ercot_wide[ercot_wide$Season=="winter",])
+print("Winter Model Summary")
+tab_model(lin.mod.winter)
+
+lin.mod.spring <- lm(Coal ~ Gas + Wind, data = ercot_wide[ercot_wide$Season=="spring",])
+print("Spring Model Summary")
+tab_model(lin.mod.spring)
+
+lin.mod.summer <- lm(Coal ~ Gas + Wind, data = ercot_wide[ercot_wide$Season=="summer",])
+print("Summer Model Summary")
+tab_model(lin.mod.summer)
+
+lin.mod.fall <- lm(Coal ~ Gas + Wind, data = ercot_wide[ercot_wide$Season=="fall",])
+print("Fall Model Summary")
+tab_model(lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall)
+
+tab_model(
+  lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall, 
+  dv.labels = c("Winter", "Spring", "Summer", "Fall"),
+  show.ci = FALSE, 
+  string.p = "P-Value", 
+  transform = NULL
+)
+
+```
+
+
+
+
+
+
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+ggplot(ercot_wide, aes(x = Wind + Gas + Gas_Price, y = Coal, color = Season)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation + Gas Plant Net Generation (GWh)", y = "Coal Net Generation (GWh)", color = "Season",
+       title = "Seasonal Variation of Coal performance in ERCOT", 
+  subtitle = "Coal net generation vs gas & wind net generation. Texas, 2007 - 2019. Data: ERCOT.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+
+ggplot(ercot_wide, aes(x = Gas_Price, y = Coal/1000, color = Season)) +
+  geom_point(alpha = 0.2) +
+  labs(x = "Texas Natural Gas Industrial Price (Dollars per Thousand Cubic Feet)", y = "Coal Net Generation (GWh)", color = "Season",
+       title = "Seasonal Variation of Coal performance in ERCOT", 
+  subtitle = "Gas prices compared with coal electricity production in ERCOT. Texas, 2007 - 2019. Data: ERCOT.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.25))
+```
+
+
+
+
+```{r}
+library(caret)
+
+glimpse(ercot_wide)
+summary(ercot_wide)
+
+preproc1 <- preProcess(ercot_wide[,c(2:10)], method=c("center", "scale"))
+ 
+norm1 <- predict(preproc1, ercot_wide[,c(2:10)])
+ 
+summary(norm1)
+
+norm1$Date <- ercot_wide$Date
+norm1$Season <- ercot_wide$Season
+
+```
+
+
+
+
+```{r}
+lin.mod <- lm(Coal ~ Gas + Wind + Gas_Price, data = ercot_wide)
+summary(lin.mod)
+
+lin.mod.norm <- lm(Coal ~ Gas + Wind + Gas_Price, data = norm1)
+summary(lin.mod.norm)
+```
+
+```{r}
+ggplot(norm1, aes(x = Wind + Gas + Gas_Price, y = Coal, color = Season)) +
+  geom_point(alpha = 0.1) +
+  labs(x = "Wind Net Generation + Gas Net Generation + Gas Price", y = "Coal Net Generation", color = "Season",
+       title = "Seasonal Variation of Coal performance in ERCOT (Normalized)", 
+  subtitle = "Coal net generation vs gas & wind net generation and gas price. Texas, 2007 - 2019. Data: ERCOT.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+```
+
+```{r}
+lin.mod.norm.winter <- lm(Coal ~ Gas_Price, data = ercot_wide[ercot_wide$Season=="winter",])
+print("Winter Model Summary")
+tab_model(lin.mod.norm.winter)
+
+lin.mod.norm.spring <- lm(Coal ~ Gas_Price, data = ercot_wide[ercot_wide$Season=="spring",])
+print("Spring Model Summary")
+tab_model(lin.mod.norm.spring)
+
+lin.mod.norm.summer <- lm(Coal ~ Gas_Price, data = ercot_wide[ercot_wide$Season=="summer",])
+print("Summer Model Summary")
+tab_model(lin.mod.norm.summer)
+
+lin.mod.norm.fall <- lm(Coal ~ Gas_Price, data = ercot_wide[ercot_wide$Season=="fall",])
+print("Fall Model Summary")
+tab_model(lin.mod.norm.winter, lin.mod.norm.spring, lin.mod.norm.summer, lin.mod.norm.fall)
+
+tab_model(
+  lin.mod.norm.winter, lin.mod.norm.spring, lin.mod.norm.summer, lin.mod.norm.fall, 
+  dv.labels = c("Winter", "Spring", "Summer", "Fall"),
+  show.ci = FALSE, 
+  string.est = "Coefficient",
+  string.p = "P-Value", 
+  transform = NULL
+)
+```
+
+```{r}
+lin.mod.norm.winter <- lm(Coal ~ Gas + Wind + Gas_Price, data = norm1[norm1$Season=="winter",])
+print("Winter Model Summary")
+tab_model(lin.mod.norm.winter)
+
+lin.mod.norm.spring <- lm(Coal ~ Gas + Wind + Gas_Price, data = norm1[norm1$Season=="spring",])
+print("Spring Model Summary")
+tab_model(lin.mod.norm.spring)
+
+lin.mod.norm.summer <- lm(Coal ~ Gas + Wind + Gas_Price, data = norm1[norm1$Season=="summer",])
+print("Summer Model Summary")
+tab_model(lin.mod.norm.summer)
+
+lin.mod.norm.fall <- lm(Coal ~ Gas + Wind + Gas_Price, data = norm1[norm1$Season=="fall",])
+print("Fall Model Summary")
+tab_model(lin.mod.norm.winter, lin.mod.norm.spring, lin.mod.norm.summer, lin.mod.norm.fall)
+
+tab_model(
+  lin.mod.norm.winter, lin.mod.norm.spring, lin.mod.norm.summer, lin.mod.norm.fall, 
+  dv.labels = c("Winter", "Spring", "Summer", "Fall"),
+  show.ci = FALSE, 
+  string.est = "Coefficient",
+  string.p = "P-Value", 
+  transform = NULL
+)
+```
+
+

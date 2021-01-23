@@ -1,0 +1,305 @@
+---
+title: "Geospatial Analysis"
+author: "Eli Ramthun"
+date: "5/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r echo=FALSE}
+library(readr)
+
+close_coal_00 <- read_csv("geospatial/125mi_coal_00.csv")
+close_coal_04 <- read_csv("geospatial/125mi_coal_04.csv")
+close_coal_05 <- read_csv("geospatial/125mi_coal_05.csv")
+close_coal_07 <- read_csv("geospatial/125mi_coal_07.csv")
+close_coal_09 <- read_csv("geospatial/125mi_coal_09.csv")
+close_coal_10 <- read_csv("geospatial/125mi_coal_10.csv")
+close_coal_12 <- read_csv("geospatial/125mi_coal_12.csv")
+close_coal_14 <- read_csv("geospatial/125mi_coal_14.csv")
+close_coal_16 <- read_csv("geospatial/125mi_coal_16.csv")
+close_coal_18 <- read_csv("geospatial/125mi_coal_18.csv")
+
+far_coal_00 <- read_csv("geospatial/far_coal_00.csv")
+far_coal_04 <- read_csv("geospatial/far_coal_04.csv")
+far_coal_05 <- read_csv("geospatial/far_coal_05.csv")
+far_coal_07 <- read_csv("geospatial/far_coal_07.csv")
+far_coal_09 <- read_csv("geospatial/far_coal_09.csv")
+far_coal_10 <- read_csv("geospatial/far_coal_10.csv")
+far_coal_12 <- read_csv("geospatial/far_coal_12.csv")
+far_coal_14 <- read_csv("geospatial/far_coal_14.csv")
+far_coal_16 <- read_csv("geospatial/far_coal_16.csv")
+far_coal_18 <- read_csv("geospatial/far_coal_18.csv")
+
+wind_2000 <- read_csv("geospatial/wind_2000.csv")
+wind_2004 <- read_csv("geospatial/wind_2004.csv")
+wind_2005 <- read_csv("geospatial/wind_2005.csv")
+wind_2007 <- read_csv("geospatial/wind_2007.csv")
+wind_2009 <- read_csv("geospatial/wind_2009.csv")
+wind_2010 <- read_csv("geospatial/wind_2010.csv")
+wind_2012 <- read_csv("geospatial/wind_2012.csv")
+wind_2014 <- read_csv("geospatial/wind_2014.csv")
+wind_2016 <- read_csv("geospatial/wind_2016.csv")
+wind_2018 <- read_csv("geospatial/wind_2018.csv")
+
+tx_netgen_annual <- read_csv("tx_net_gen_annual.csv")
+```
+
+
+```{r}
+
+close_00_net <- mean(close_coal_00$annual_net)
+far_00_net <- mean(far_coal_00$annual_net)
+
+close_04_net <- mean(close_coal_04$annual_net)
+far_04_net <- mean(far_coal_04$annual_net)
+
+close_05_net <- mean(close_coal_05$annual_net)
+far_05_net <- mean(far_coal_05$annual_net)
+
+close_07_net <- mean(close_coal_07$annual_net)
+far_07_net <- mean(far_coal_07$annual_net)
+
+close_09_net <- mean(close_coal_09$annual_net)
+far_09_net <- mean(far_coal_09$annual_net)
+
+close_10_net <- mean(close_coal_10$annual_net)
+far_10_net <- mean(far_coal_10$annual_net)
+
+close_12_net <- mean(close_coal_12$annual_net)
+far_12_net <- mean(far_coal_12$annual_net)
+
+close_14_net <- mean(close_coal_14$annual_net)
+far_14_net <- mean(far_coal_14$annual_net)
+
+close_16_net <- mean(close_coal_16$annual_net)
+far_16_net <- mean(far_coal_16$annual_net)
+
+close_18_net <- mean(close_coal_18$annual_net)
+far_18_net <- mean(far_coal_18$annual_net)
+
+
+
+
+close_00_capfac <- mean(close_coal_00$capacity_f)
+far_00_capfac <- mean(far_coal_00$capacity_f)
+
+close_04_capfac <- mean(close_coal_04$capacity_f)
+far_04_capfac <- mean(far_coal_04$capacity_f)
+
+close_05_capfac <- mean(close_coal_05$capacity_f)
+far_05_capfac <- mean(far_coal_05$capacity_f)
+
+close_07_capfac <- mean(close_coal_07$capacity_f)
+far_07_capfac <- mean(far_coal_07$capacity_f)
+
+close_09_capfac <- mean(close_coal_09$capacity_f)
+far_09_capfac <- mean(far_coal_09$capacity_f)
+
+close_10_capfac <- mean(close_coal_10$capacity_f)
+far_10_capfac <- mean(far_coal_10$capacity_f)
+
+close_12_capfac <- mean(close_coal_12$capacity_f)
+far_12_capfac <- mean(far_coal_12$capacity_f)
+
+close_14_capfac <- mean(close_coal_14$capacity_f)
+far_14_capfac <- mean(far_coal_14$capacity_f)
+
+close_16_capfac <- mean(close_coal_16$capacity_f)
+far_16_capfac <- mean(far_coal_16$capacity_f)
+
+close_18_capfac <- mean(close_coal_18$capacity_f)
+far_18_capfac <- mean(far_coal_18$capacity_f)
+```
+
+```{r}
+coal_netgen_2000 <- sum(close_coal_00$annual_net + far_coal_00$annual_net)
+coal_netgen_2004 <- sum(close_coal_04$annual_net + far_coal_04$annual_net)
+coal_netgen_2005 <- sum(close_coal_05$annual_net + far_coal_05$annual_net)
+coal_netgen_2007 <- sum(close_coal_07$annual_net + far_coal_07$annual_net)
+coal_netgen_2009 <- sum(close_coal_09$annual_net + far_coal_09$annual_net)
+coal_netgen_2010 <- sum(close_coal_10$annual_net + far_coal_10$annual_net)
+coal_netgen_2012 <- sum(close_coal_12$annual_net + far_coal_12$annual_net)
+coal_netgen_2014 <- sum(close_coal_14$annual_net + far_coal_14$annual_net)
+coal_netgen_2016 <- sum(close_coal_16$annual_net + far_coal_16$annual_net)
+coal_netgen_2018 <- sum(close_coal_18$annual_net + far_coal_18$annual_net)
+
+coal_capfac_2000 <- mean(close_00_capfac, far_00_capfac)
+coal_capfac_2004 <- mean(close_04_capfac, far_04_capfac)
+coal_capfac_2005 <- mean(close_05_capfac, far_05_capfac)
+coal_capfac_2007 <- mean(close_07_capfac, far_07_capfac)
+coal_capfac_2009 <- mean(close_09_capfac, far_09_capfac)
+coal_capfac_2010 <- mean(close_10_capfac, far_10_capfac)
+coal_capfac_2012 <- mean(close_12_capfac, far_12_capfac)
+coal_capfac_2014 <- mean(close_14_capfac, far_14_capfac)
+coal_capfac_2016 <- mean(close_16_capfac, far_16_capfac)
+coal_capfac_2018 <- mean(close_18_capfac, far_18_capfac)
+```
+
+```{r}
+wind_netgen_2000 <- sum(wind_2000$annual_net)
+wind_netgen_2004 <- sum(wind_2004$annual_net)
+wind_netgen_2005 <- sum(wind_2005$annual_net)
+wind_netgen_2007 <- sum(wind_2007$annual_net)
+wind_netgen_2009 <- sum(wind_2009$annual_net)
+wind_netgen_2010 <- sum(wind_2010$annual_net)
+wind_netgen_2012 <- sum(wind_2012$annual_net)
+wind_netgen_2014 <- sum(wind_2014$annual_net)
+wind_netgen_2016 <- sum(wind_2016$annual_net)
+wind_netgen_2018 <- sum(wind_2018$annual_net)
+
+```
+
+
+
+```{r}
+close_netgen_change <- close_16_net - close_18_net
+far_netgen_change <- far_16_net - far_18_net
+
+close_cf_change <- close_16_capfac - close_18_capfac
+far_cf_change <- far_16_capfac - far_18_capfac
+```
+
+
+
+```{r}
+#set up data frame
+
+df <- data.frame("year" = c(2000,2004,2005,2007,2009,2010,2012,2014,2016,2018), "wind_netgen" = c(wind_netgen_2000,wind_netgen_2004,wind_netgen_2005,wind_netgen_2007,wind_netgen_2009,wind_netgen_2010,wind_netgen_2012,wind_netgen_2014 ,wind_netgen_2016,wind_netgen_2018), "coal_netgen" = c(coal_netgen_2000,coal_netgen_2004,coal_netgen_2005,coal_netgen_2007,coal_netgen_2009, coal_netgen_2010, coal_netgen_2012, coal_netgen_2014, coal_netgen_2016, coal_netgen_2018), "coal_capfac" = c(coal_capfac_2000, coal_capfac_2004, coal_capfac_2005, coal_capfac_2007, coal_capfac_2009,coal_capfac_2010, coal_capfac_2012, coal_capfac_2014, coal_capfac_2016, coal_capfac_2018), "close_coal_netgen" = c(close_00_net, close_04_net, close_05_net, close_07_net, close_09_net,close_10_net,close_12_net, close_14_net,close_16_net, close_18_net), "far_coal_netgen" = c(far_00_net, far_04_net, far_05_net, far_07_net, far_09_net,far_10_net,far_12_net, far_14_net, far_16_net, far_18_net), "close_coal_capfac" = c(close_00_capfac, close_04_capfac, close_05_capfac, close_07_capfac, close_09_capfac,close_10_capfac,close_12_capfac, close_14_capfac, close_16_capfac, close_18_capfac), "far_coal_capfac" = c(far_00_capfac, far_04_capfac, far_05_capfac, far_07_capfac, far_09_capfac, far_10_capfac, far_12_capfac,far_14_capfac,far_16_capfac, far_18_capfac))
+```
+
+
+```{r}
+library(jtools)
+library(kableExtra)
+
+close_capfac.lin.mod <- lm(close_coal_capfac ~ wind_netgen, data = df)
+summ(close_capfac.lin.mod, digits=9)
+
+far_capfac.lin.mod <- lm(far_coal_capfac ~ wind_netgen, data = df)
+summ(far_capfac.lin.mod, digits=9)
+
+
+close_netgen.lin.mod <- lm(close_coal_netgen ~ wind_netgen, data = df)
+summ(close_netgen.lin.mod)
+
+far_netgen.lin.mod <- lm(far_coal_netgen ~ wind_netgen, data = df)
+summ(far_netgen.lin.mod, digits=4)
+
+
+
+
+#capfac.lin.mod <- lm(coal_capfac ~ wind_netgen, data = df)
+#summary(capfac.lin.mod)
+
+#netgen.lin.mod <- lm(coal_netgen ~ wind_netgen, data = df)
+#summary(netgen.lin.mod)
+
+
+
+#total.lin.mod <- lm(coal ~ wind + ng + solar + nuke, data = tx_netgen_annual)
+#summary(total.lin.mod)
+
+```
+
+```{r}
+library(ggplot2)
+library(GGally)
+```
+
+
+```{r}
+ggpairs(df, columns = c(1,2,5,7), columnLabels = c("Year", "Total Wind Gen. (MWh)", "Mean Coal Gen. (MWh)", "Mean Coal CF (%)"), title = "Coal Plants Within 125 mi. of Wind Farms, 2000-2018", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue") 
+    ))
+
+ggpairs(df, columns = c(1,2,6,8), columnLabels = c("Year", "Total Wind Gen. (MWh)", "Mean Coal Gen. (MWh)", "Mean Coal CF (%)"), title = "Coal Plants Farther than 125 mi. from Wind Farms, 2000-2018", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue") 
+    ))
+
+ggpairs(df, columns = c(1,2,3,4), columnLabels = c("Year", "Total Wind Gen. (MWh)", "Total Coal Gen. (MWh)", "Mean Coal CF (%)"), title = "Correlating Wind Energy with Coal Plant Prodution in ERCOT", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue") 
+    ))
+
+
+
+
+ggpairs(tx_netgen_annual, columns = c(1,7,2:6), columnLabels = c("Year", "Total", "Coal", "Nat. Gas", "Nuclear", "Wind", "Solar"), title = "Correlating Electricity Technlogies in ERCOT, 2001-2019 (GWh). Source: EIA", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue") 
+    ))
+
+coal.tot.lin.mod <- lm(coal ~ wind + ng, data = tx_netgen_annual)
+summary(coal.tot.lin.mod)
+
+wind.tot.lin.mod <- lm(wind ~ coal+ ng, data = tx_netgen_annual)
+summary(wind.tot.lin.mod)
+
+plot(tx_netgen_annual)
+```
+
+
+
+
+
+
+
+```{r}
+cat.df <- data.frame("wind_netgen" = c(df$wind_netgen, df$wind_netgen), "coal_netgen" = c(df$close_coal_netgen, df$far_coal_netgen), "coal_capfac" = c(df$close_coal_capfac, df$far_coal_capfac), "distance" = c(rep("close", 10), rep("far", 10)))
+```
+
+
+```{r}
+ggplot(cat.df, aes(x = wind_netgen, y = coal_netgen, color = distance)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (MWh)", y = "Coal Net Generation (MWh)", color = "Distance to Wind Farms",
+       title = "Coal Plant Net Generation Related to Wind Farm Output", 
+  subtitle = "2000 - 2018. Data from EPA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.8, 0.85))
+
+
+ggplot(cat.df, aes(x = wind_netgen, y = coal_capfac*100, color = distance)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (MWh)", y = "Coal Plant Capacity Factor (%)", color = "Distance to Wind Farms",
+       title = "Coal Plant Capacity Factor Related to Wind Farm Output",
+       subtitle = "2000 - 2018. Data from EPA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.8, 0.85))
+
+```
+
+
+```{r}
+wind.lin.mod <- lm(wind_netgen ~ close_coal_netgen + far_coal_netgen, data = df)
+summary(wind.lin.mod)
+
+
+
+ggplot(cat.df, aes(x = coal_netgen, y = wind_netgen, color = distance)) +
+  geom_point()  +
+  labs(x = "Coal Net Generation (MWh)", y = "Wind Farm Net Generation (MWh)", color = "Distance to Wind Farms",
+       title = "Coal Plant Net Generation Related to Wind Farm Output", 
+  subtitle = "2000 - 2018. Data from EPA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.8, 0.85))
+
+```
+
+```{r}
+library(lmtest)
+coxtest(close_capfac.lin.mod, far_capfac.lin.mod)
+coxtest(close_capfac.lin.mod, far_capfac.lin.mod)
+
+anova(close_capfac.lin.mod, far_capfac.lin.mod)
+anova(close_netgen.lin.mod, far_netgen.lin.mod)
+```
+

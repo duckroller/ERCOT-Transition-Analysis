@@ -1,0 +1,453 @@
+---
+title: "Seasonality in EIA Data"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(GGally)
+library(jtools)
+library(kableExtra)
+library(season)
+library(coda)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+```
+
+
+```{r}
+# season conversion code from https://stackoverflow.com/questions/9500114/find-which-season-a-particular-date-belongs-to
+getSeason <- function(DATES) {
+    WS <- as.Date("2012-12-1", format = "%Y-%m-%d") # Winter Solstice
+    SE <- as.Date("2012-3-1",  format = "%Y-%m-%d") # Spring Equinox
+    SS <- as.Date("2012-6-1",  format = "%Y-%m-%d") # Summer Solstice
+    FE <- as.Date("2012-9-1",  format = "%Y-%m-%d") # Fall Equinox
+
+    # Convert dates from any year to 2012 dates
+    d <- as.Date(strftime(DATES, format="2012-%m-%d"))
+
+    ifelse (d >= WS | d < SE, "winter",
+      ifelse (d >= SE & d < SS, "spring",
+        ifelse (d >= SS & d < FE, "summer", "fall")))
+}
+```
+
+
+```{r}
+#import annual dataset
+
+tx_monthly_netgen <- read_csv("tx_monthly_netgen.csv", col_types = cols(date = col_date(format = "%m/%d/%Y")))
+
+tx_transformed <- read_csv("tx_transformed.csv", col_types = cols(Date = col_date(format = "%m/%d/%Y")))
+
+us_monthly_netgen <- read_csv("usa_monthly_netgen.csv", col_types = cols(date = col_date(format = "%m/%d/%Y")))
+
+us_transformed <- read_csv("usa_transformed.csv", col_types = cols(Date = col_date(format = "%m/%d/%Y")))
+
+```
+
+```{r}
+#assign calendar seasons
+
+tx_monthly_netgen$season <- getSeason(tx_monthly_netgen$date)
+tx_transformed$season <- getSeason(tx_transformed$Date)
+us_monthly_netgen$season <- getSeason(us_monthly_netgen$date)
+us_transformed$season <- getSeason(us_transformed$Date)
+
+
+
+#add year and month variables for season library
+#not used atm
+
+tx_monthly_netgen$year <- year(tx_monthly_netgen$date)
+tx_monthly_netgen$month <- month(tx_monthly_netgen$date)
+us_monthly_netgen$year <- year(us_monthly_netgen$date)
+us_monthly_netgen$month <- month(us_monthly_netgen$date)
+
+```
+
+
+```{r}
+#correlograms relating seasonal relationships between coal, wind and netgen in Texas
+
+ggpairs(tx_monthly_netgen, columns = c(2:5))
+
+ggpairs(tx_monthly_netgen[tx_monthly_netgen$season=="spring",], columns = c(1:5), title = "Relating Coal and Wind production in Texas, Spring 2001-2020. Source: EIA", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue") 
+    ))
+
+ggpairs(tx_monthly_netgen[tx_monthly_netgen$season=="summer",], columns = c(1:5), title = "Relating Coal and Wind production in Texas, Summer 2001-2020. Source: EIA", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue") 
+    ))
+
+ggpairs(tx_monthly_netgen[tx_monthly_netgen$season=="fall",], columns = c(1:5), title = "Relating Coal and Wind production in Texas, Fall 2001-2020. Source: EIA", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue")))
+
+ggpairs(tx_monthly_netgen[tx_monthly_netgen$season=="winter",], columns = c(1:5), title = "Relating Coal and Wind production in Texas, Winter 2001-2020. Source: EIA", lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue")))
+
+
+```
+
+```{r}
+#boxplot of seasonal data
+
+ggplot(tx_monthly_netgen, aes(x=season, y=coal)) + 
+    geom_boxplot()
+
+ggplot(tx_monthly_netgen, aes(x=season, y=wind)) + 
+    geom_boxplot()
+
+tx_transformed$season <- factor(tx_transformed$season, levels=c("spring", "summer", "fall", "winter"))
+
+ggplot(tx_transformed[year(tx_transformed$Date)>=2010,], aes(x=season, y=GWh, fill=Fuel)) + 
+  geom_boxplot()+
+  labs(title="Seasonal Boxplot for Coal and Wind Generation",subtitle="Texas, 2010-2020. Source: EIA")
+```
+
+```{r}
+#monthly boxplot
+
+ggplot(tx_transformed[year(tx_transformed$Date)>=2010,], aes(x=factor(month(Date)), y=GWh, fill=Fuel))+
+  labs(title="Monthly Boxplot for Coal and Wind Generation",subtitle="Texas, 2010-2020. Source: EIA")+
+ geom_boxplot()+
+ ylab('Generation (GWh)')+
+ xlab('Month')
+
+```
+
+```{r}
+# linear models for seasonal relationships between coal and wind in Texas
+
+ggplot(tx_monthly_netgen, aes(x = wind, y = coal, color = season)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (GWh)", y = "Coal Net Generation (GWh)", color = "Season",
+       title = "Coal Plant Net Generation Related to Wind Farm Output, Divided by Season", 
+  subtitle = "Texas, 2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+ggplot(tx_monthly_netgen, aes(x = gas, y = coal, color = season)) +
+  geom_point() +
+  labs(x = "Gas Plant Net Generation (GWh)", y = "Coal Net Generation (GWh)", color = "Season",
+       title = "Coal Plant Net Generation Related to Gas Plant Output, Divided by Season", 
+  subtitle = "Texas, 2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.25))
+
+ggplot(tx_monthly_netgen, aes(x = wind, y = gas, color = season)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (GWh)", y = "Gas Net Generation (GWh)", color = "Season",
+       title = "Gas Plant Net Generation Related to Wind Farm Output, Divided by Season", 
+  subtitle = "Texas, 2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+
+ggplot(tx_transformed, aes(x = Date, y = GWh, color = Fuel)) +
+  geom_point() +
+  labs(x = "Date", y = "Net Generation (GWh)", color = "Fuel",
+       title = "Monthly Net Electricity Generation in Ercot", 
+  subtitle = "2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+
+ggplot(tx_monthly_netgen, aes(x = gas + wind, y = coal, color = season)) +
+  geom_point() +
+  labs(x = "Gas plant Net Generation + Wind Farm Net Generation (GWh)", y = "Coal Plant Net Generation (GWh)", color = "Season",
+       title = "Seasonal Variation of Coal performance in ERCOT", 
+  subtitle = "Coal net generation vs gas & wind net generation. Texas, 2001 - 2020. EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.93, 0.195))
+```
+
+
+```{r}
+# creating & summarizing these linear models for ercot (no gas)
+
+lin.mod.winter <- lm(coal ~ gas + wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="winter",])
+print("Winter Model Summary")
+tab_model(lin.mod.winter)
+
+lin.mod.spring <- lm(coal ~ gas + wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="spring",])
+print("Spring Model Summary")
+tab_model(lin.mod.spring)
+
+lin.mod.summer <- lm(coal ~ gas + wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="summer",])
+print("Summer Model Summary")
+tab_model(lin.mod.summer)
+
+lin.mod.fall <- lm(coal ~ gas + wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="fall",])
+print("Fall Model Summary")
+tab_model(lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall)
+
+tab_model(
+  lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall, 
+  dv.labels = c("Winter", "Spring", "Summer", "Fall"),
+  show.ci = FALSE, 
+  string.p = "P-Value", 
+  transform = NULL
+)
+
+# now with gas:
+
+#lin.mod.winter <- lm(coal/gas ~ wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="winter",])
+#lin.mod.spring <- lm(coal/gas ~ wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="spring",])
+#lin.mod.summer <- lm(coal/gas ~ wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="summer",])
+#lin.mod.fall <- lm(coal/gas ~ wind, data = tx_monthly_netgen[tx_monthly_netgen$season=="fall",])
+#tab_model(lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall)
+
+#tab_model(
+#  lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall, 
+#  dv.labels = c("Winter", "Spring", "Summer", "Fall"),
+#  show.ci = FALSE, 
+#  string.p = "P-Value", 
+#  transform = NULL,
+#  digits = 5
+#)
+
+```
+
+```{r}
+#more seasonality work
+#dd <- data.frame(year=tx_monthly_netgen$year, month=tx_monthly_netgen$month, coal=unlist(tx_monthly_netgen$coal), wind=unlist(tx_monthly_netgen$wind))
+
+#set.seed(1234) # set the random seed to give repeatable results
+
+#f = c(12) # a single twelve month cycle
+#tau = c(10, 50) # achieved via trial-and-error; small tau -> less variability
+```
+
+```{r}
+#this gets its own chunk because it takes forever to run
+#ns.season.coal = nscosinor(data=dd, response='coal', cycles=f, niters=2000,
+#         burnin=500, tau=tau, div=1000)
+```
+
+```{r}
+#summarizing and plotting detrended coal data
+
+#summary(ns.season.coal)
+#plot(ns.season.coal)
+
+```
+
+```{r}
+#this gets its own chunk because it takes forever to run
+#ns.season.wind = nscosinor(data=dd, response='wind', cycles=f, niters=2000,
+#         burnin=500, tau=tau, div=1000)
+```
+
+```{r}
+#summarizing and plotting detrended wind data
+
+#summary(ns.season.wind)
+#plot(ns.season.wind)
+
+```
+
+```{r}
+#boxplot of  USA seasonal data
+
+#ggplot(us_monthly_netgen, aes(x=season, y=coal)) + 
+#    geom_boxplot()
+
+#ggplot(us_monthly_netgen, aes(x=season, y=wind)) + 
+#    geom_boxplot()
+
+us_transformed$season <- factor(us_transformed$season, levels=c("spring", "summer", "fall", "winter"))
+
+
+ggplot(us_transformed[year(us_transformed$Date)>=2010,], aes(x=season, y=GWh, fill=Fuel)) +
+  geom_boxplot()+
+  labs(title="Seasonal Boxplot for Coal, Gas and Wind Generation",subtitle="Electricity generation in a given month within that season. USA, 2010-2020. Source: EIA")
+```
+
+```{r}
+#monthly boxplot
+
+ggplot(us_transformed[year(us_transformed$Date)>=2010,], aes(x=factor(month(Date)), y=GWh, fill=Fuel))+
+  labs(title="Monthly Boxplot for Coal, Wind and Gas Generation",subtitle="USA, 2010-2020. Source: EIA")+
+ geom_boxplot()+
+ ylab('Generation (GWh)')+
+ xlab('Month')
+
+```
+
+```{r}
+# linear models for seasonal relationships between coal and wind in Texas
+
+ggplot(us_monthly_netgen, aes(x = wind, y = coal, color = season)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (GWh)", y = "Coal Net Generation (GWh)", color = "Season",
+       title = "Coal Plant Net Generation Related to Wind Farm Output, Divided by Season", 
+  subtitle = "USA, 2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+ggplot(us_monthly_netgen, aes(x = gas, y = coal, color = season)) +
+  geom_point() +
+  labs(x = "Gas Plant Net Generation (GWh)", y = "Coal Net Generation (GWh)", color = "Season",
+       title = "Coal Plant Net Generation Related to Gas Plant Output, Divided by Season", 
+  subtitle = "USA, 2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+ggplot(us_monthly_netgen, aes(x = wind, y = gas, color = season)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (GWh)", y = "Gas Net Generation (GWh)", color = "Season",
+       title = "Gas Plant Net Generation Related to Wind Farm Output, Divided by Season", 
+  subtitle = "USA, 2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+
+ggplot(us_transformed, aes(x = Date, y = GWh, color = Fuel)) +
+  geom_point() +
+  labs(x = "Date", y = "Net Generation (GWh)", color = "Fuel",
+       title = "Monthly Net Electricity Generation in the USA", 
+  subtitle = "2001 - 2020. Data from EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.9, 0.85))
+
+
+ggplot(us_monthly_netgen, aes(x = wind, y = coal/gas, color = season)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (GWh)", y = "(Coal plant net generation) / (Gas plant net generation)", color = "Season",
+       title = "Seasonal Variation of Coal performance in the USA", 
+  subtitle = "Coal performance as ratio of coal net generation to gas net generation. USA, 2001 - 2020. EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.75, 0.7))
+```
+
+
+```{r}
+# creating & summarizing these linear models for ercot (no gas)
+
+lin.mod.winter <- lm(coal ~ gas, data = us_monthly_netgen[us_monthly_netgen$season=="winter",])
+print("Winter Model Summary")
+tab_model(lin.mod.winter)
+
+lin.mod.spring <- lm(coal ~ gas, data = us_monthly_netgen[us_monthly_netgen$season=="spring",])
+print("Spring Model Summary")
+tab_model(lin.mod.spring)
+
+lin.mod.summer <- lm(coal ~ gas, data = us_monthly_netgen[us_monthly_netgen$season=="summer",])
+print("Summer Model Summary")
+tab_model(lin.mod.summer)
+
+lin.mod.fall <- lm(coal ~ gas, data = us_monthly_netgen[us_monthly_netgen$season=="fall",])
+print("Fall Model Summary")
+tab_model(lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall)
+
+tab_model(
+  lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall, 
+  dv.labels = c("Winter", "Spring", "Summer", "Fall"),
+  show.ci = FALSE, 
+  string.p = "P-Value", 
+  transform = NULL
+)
+
+# now with gas:
+
+lin.mod.winter <- lm(coal/gas ~ wind, data = us_monthly_netgen[us_monthly_netgen$season=="winter",])
+lin.mod.spring <- lm(coal/gas ~ wind, data = us_monthly_netgen[us_monthly_netgen$season=="spring",])
+lin.mod.summer <- lm(coal/gas ~ wind, data = us_monthly_netgen[us_monthly_netgen$season=="summer",])
+lin.mod.fall <- lm(coal/gas ~ wind, data = us_monthly_netgen[us_monthly_netgen$season=="fall",])
+tab_model(lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall)
+
+tab_model(
+  lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall, 
+  dv.labels = c("Winter", "Spring", "Summer", "Fall"),
+  show.ci = FALSE,
+  string.p = "P-Value", 
+  transform = NULL,
+  digits = 5
+)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+ggplot(tx_transformed, aes(x = Date, y = GWh/total, color = Fuel)) +
+  geom_point() +
+  labs(x = "Date", y = "Energy production as fraction of total", color = "Generation Tech",
+       title = "Coal/wind/gas, fraction of total", 
+  subtitle = "Texas, 2001 - 2020. EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.15, 0.375))
+
+lin.mod.coal <- lm(GWh/total ~ Date, data = tx_transformed[tx_transformed$Fuel == "coal",])
+lin.mod.wind <- lm(GWh/total ~ Date, data = tx_transformed[tx_transformed$Fuel == "wind",])
+lin.mod.gas <- lm(GWh/total ~ Date, data = tx_transformed[tx_transformed$Fuel == "gas",])
+
+tab_model(
+  lin.mod.coal, lin.mod.wind, lin.mod.gas, 
+  dv.labels = c("Coal", "Wind", "Gas"),
+  show.ci = FALSE,
+  string.p = "P-Value", 
+  transform = NULL,
+  digits = 6
+)
+```
+
+
+
+```{r}
+
+ggplot(us_transformed, aes(x = Date, y = GWh/Total, color = Fuel)) +
+  geom_point() +
+  labs(x = "Date", y = "Energy production as fraction of total", color = "Generation Tech",
+       title = "Coal/wind/gas, fraction of total", 
+  subtitle = "USA, 2001 - 2020. EIA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.15, 0.6))
+
+lin.mod.coal <- lm(GWh/Total ~ Date, data = us_transformed[us_transformed$Fuel == "coal",])
+lin.mod.wind <- lm(GWh/Total ~ Date, data = us_transformed[us_transformed$Fuel == "wind",])
+lin.mod.gas <- lm(GWh/Total ~ Date, data = us_transformed[us_transformed$Fuel == "gas",])
+
+tab_model(
+  lin.mod.coal, lin.mod.wind, lin.mod.gas, 
+  dv.labels = c("Coal", "Wind", "Gas"),
+  show.ci = FALSE,
+  string.p = "P-Value", 
+  transform = NULL,
+  digits = 6
+)
+```
+
+
+
+
+
+
+
+
+
+```{r}
+library(plotly)
+
+fig <- plot_ly(tx_monthly_netgen, x = ~wind, y = ~gas, z = ~coal)
+
+fig
+```
+

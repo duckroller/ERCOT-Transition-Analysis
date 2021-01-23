@@ -1,0 +1,68 @@
+---
+title: "NEI Regional/Sectorial Analysis"
+output: html_notebook
+---
+
+```{r}
+library(readr)
+library(ggplot2)
+```
+
+
+#import NEI data
+```{r}
+NEI_2017 <- read_csv("EPA NEI 2017/emis_sum_fac_10280.csv", 
+    col_types = cols(`agency facility id` = col_character(), 
+        `facility source type` = col_character(), 
+        `tri facility id` = col_character(), 
+        `tribal name` = col_character()))
+```
+
+```{r}
+state_to_code <- read_csv("state_to_code.csv")
+code_to_name <-  read_csv("code_to_name.csv")
+```
+
+```{r}
+#NEI_2017$region_code <- ifelse(!is.na(NEI_2017$state), state_to_code$region_code[state_to_code$state == NEI_2017$state], NA)
+
+#bad attempt to use other region codes. gonna stick with EPA for now... 
+```
+
+```{r}
+ggplot(NEI_2017[NEI_2017$`pollutant type(s)`=="GHG",], aes(x=`epa region code`, y=`total emissions`, fill=`epa region code`)) + 
+    geom_boxplot(alpha=0.3) +
+    theme(legend.position="none") +
+    scale_fill_brewer(palette="BuPu")
+```
+
+
+Since I'm just plotting individual emission sites here, there are so many small polluters that boxplots are meaningless here... Gonna aggregate by state for each region next.
+
+
+
+```{r}
+NEI_GHG <- NEI_2017[NEI_2017$`pollutant type(s)`=="GHG",]
+```
+
+```{r}
+GHG_by_state <- setNames(aggregate(NEI_GHG$`total emissions`, by=list(Category=NEI_GHG$state), FUN=sum), c("state", "emissions"))
+
+```
+
+
+
+```{r}
+ggplot(GHG_by_state, aes(x=`epa region code`, y=`total emissions`, fill=`epa region code`)) + 
+    geom_boxplot(alpha=0.3) +
+    theme(legend.position="none") +
+    scale_fill_brewer(palette="BuPu")
+```
+
+
+
+```{r}
+GHG_by_state$region <- state_to_code$region_code[state_to_code$state == GHG_by_state$state]
+
+```
+

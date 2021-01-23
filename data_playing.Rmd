@@ -1,0 +1,304 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+
+#rm(list = ls())
+
+```
+
+
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(usmap)
+library(readr)
+library(plyr)
+library(GGally)
+library(dplyr)
+```
+
+
+```{r}
+uswtdb <- read_csv("uswtdb_v2_3_20200109.csv")
+tx_wtdb <- uswtdb[uswtdb$t_state == "TX", ] 
+```
+
+
+
+```{r}
+hist(tx_wtdb$p_year, main = "Annual Turbine Installations in Texas", ylab = "Installations", xlab = "Year")
+
+plot(tx_wtdb$p_year, tx_wtdb$t_cap,xlab = "Year of Installation", ylab = "Capacity (MW)", main = "Texan Wind Tubine Installation Year and Generation Capacity")
+```
+
+
+
+
+
+```{r}
+#tx_wtdb <- na.omit(tx_wtdb)
+
+unique(tx_wtdb$t_model)
+
+
+rm(annual_models)
+annual_models <- setNames(data.frame(matrix(ncol = 76, nrow = 19)), c("year", unique(tx_wtdb$t_model)))
+annual_models$year <- c(2001:2019)
+
+#tx_wtdb$t_model[tx_wtdb$p_year == 1999]
+
+#ct <- count(tx_wtdb[tx_wtdb$p_year == 1999,], vars = "t_model")
+
+tx_wtdb_my <- na.omit(subset(tx_wtdb, select=c("p_year","t_model")))
+colnames(tx_wtdb_my)[1:2] <- c("year", "model")
+
+
+for (mdl in unique(tx_wtdb_my$model)) {
+#  print(mdl)
+  annual_ct <- count(tx_wtdb_my[tx_wtdb_my$model == mdl,], vars = "year")
+#  print(annual_ct)
+  colnames(annual_ct)[2] <- mdl
+  annual_models <- merge(annual_models, annual_ct)
+  }
+  
+ rm(annual_ct)
+
+unique(tx_wtdb_my$model)
+
+annual_models <-  na.omit(annual_models)
+```
+
+```{r}
+turbine_models_net_gen_tx <- read_csv("turbine_models_net_gen_tx.csv")
+```
+
+```{r}
+library(leaps)
+
+# Forward stepsise selection
+mod.fwd <- regsubsets(coal ~ ., data = turbine_models_net_gen_tx, nvmax = 8, method = "forward") #Models with upto 8 predictors
+mod.fwd.sum <- summary(mod.fwd) 
+#mod.fwd.sum #Notice which variables are selected in 1,2,3....19 variable models respectively and in what order
+
+# Backward stepwise selection
+mod.bck <- regsubsets(coal ~ ., data = turbine_models_net_gen_tx, nvmax = 8, method = "backward")#Models with upto 8 predictors
+mod.bck.sum <- summary(mod.bck) 
+#mod.bck.sum #Notice which variables are selected in 19,18,17...1 variable models respectively and in what order
+
+fwd_choices <- mod.fwd.sum$which
+fwds <- colnames(fwd_choices[,which(fwd_choices[9,]=="TRUE")])[2:9]
+
+bck_choices <- mod.bck.sum$which
+bcks <- colnames(bck_choices[,which(bck_choices[9,]=="TRUE")])[2:9]
+```
+
+
+
+
+
+
+```{r}
+tx_net_gen_annual <- read_csv("tx_net_gen_annual.csv")
+
+
+lin.mod <- 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+# Thanks SO for this tool to filter down my data and sum by unique value
+# https://stackoverflow.com/questions/11782030/sum-by-distinct-column-value-in-r
+
+county_mw <-ddply(tx_wtdb, "t_fips", transform, t_cap=sum(t_cap))
+county_mw <- subset(county_mw, !duplicated(t_fips))
+county_mw <- data.frame(county_mw[c(8)], county_mw[c(15)])
+
+# Renaming county fips code column for the usmap library's specifications
+names(county_mw)[names(county_mw) == "t_fips"] <- "fips"
+
+# Dividing by 1000 to convert to MW, as the data here is in kW and that's ugly on the legend.
+county_mw$t_cap <- county_mw$t_cap / 1000
+
+plot_usmap("counties", include = c("TX"), data = county_mw, values = "t_cap") + scale_fill_continuous(name = "MW of Installed Turbine Capacity, 2020") +
+  labs(title = "Wind Turbine Capacity in Texas") + theme(legend.position = "right")
+
+
+```
+
+
+
+Wind data from eGRID
+
+
+```{r}
+# load it, pull in relevant data to new df
+
+library(ggplot2)
+library(dplyr)
+library(readr)
+
+egrid_2018 <- read_csv("egrid_2018_ercot_plants.csv")
+
+egrid_wind <- subset(egrid_2018, PLPRMFL =="WND", select = c(PNAME, OPRNAME, PLFUELCT, CNTYNAME, FIPSCNTY, LAT, LON, CAPFAC, NAMEPCAP, PLNGENAN))
+
+egrid_coal <- subset(egrid_2018, PLFUELCT =="COAL", select = c(PNAME, OPRNAME, PLFUELCT, CNTYNAME, FIPSCNTY, LAT, LON, CAPFAC, NAMEPCAP, PLNGENAN))
+
+```
+
+```{r}
+library(maps)
+library(mapproj)
+library(viridis)
+data(stateMapEnv)
+
+
+TX <- map_data("state") %>% filter(region=="texas")
+
+egrid_cw <- rbind(egrid_wind, egrid_coal)
+```
+
+```{r}
+# Left: use size and color
+p <-  egrid_cw %>%
+arrange(desc(NAMEPCAP)) %>% 
+mutate( name=factor(PNAME, unique(PNAME))) %>% 
+ggplot() +
+  geom_polygon(data = TX, aes(x=long, y = lat, group = group), fill="grey", alpha=0.8) +
+  geom_point(data = egrid_cw, aes(x=LON, y=LAT, color=NAMEPCAP, size=NAMEPCAP, shape=PLFUELCT)) +
+#  geom_point(data = egrid_coal, aes(x=LON, y=LAT, color=NAMEPCAP, size=NAMEPCAP, shape=PLFUELCT)) +
+#  scale_color_viridis(limits=c(0, 4000), breaks=seq(0, 4000, by=1000)) +
+  theme_void() + coord_map() + 
+  labs(shape = "Plant Type", size = "Nameplate Capacity (MW)", title = "Wind Farm and Coal Plant Nameplate Capacity Factors", color = "Nameplate Capacity (MW)", subtitle = "Texas, 2018") + scale_color_continuous(limits=c(0, 4000), breaks=seq(0, 4000, by=1000), type="viridis") +
+  scale_size_continuous(limits=c(0, 4000), breaks=seq(0, 4000, by=1000)) +
+  guides(color= guide_legend(), size=guide_legend())
+
+
+
+p 
+
+
+```
+
+
+
+
+
+
+
+```{r}
+
+ggplot() +
+  geom_polygon(data = TX, aes(x=long, y = lat, group = group), fill="grey", alpha=0.8) +
+  geom_point(data = egrid_coal, aes(x=LON, y=LAT, size=NAMEPCAP, color=NAMEPCAP)) +
+  scale_color_viridis(trans="log") +
+  theme_void() + coord_map()
+
+```
+
+
+```{r}
+
+coal <- select(egrid_coal, CAPFAC, NAMEPCAP, PLNGENAN)
+ggpairs(coal, title="coal correlogram with ggpairs()")
+
+```
+
+```{r}
+
+wind <- select(egrid_wind, CAPFAC, NAMEPCAP, PLNGENAN)
+ggpairs(wind, title="wind correlogram with ggpairs()")
+
+```
+
+
+
+
+```{r}
+# EIA data
+
+# net gen mmonthly, total
+ngm_t <- read_csv("Net_generation_for_all_sectors_monthly.csv",                     col_types = cols(Month = col_date(format = "%m/%Y")))
+# net gen monthly, coal
+ngm_c <- read_csv("Net_generation_for_coal_monthly.csv",                     col_types = cols(Month = col_date(format = "%m/%Y")))
+# net gen monthly, wind
+ngm_w <- read_csv("Net_generation_for_wind_monthly.csv",                     col_types = cols(Month = col_date(format = "%m/%Y")))
+
+month     <- ngm_t$Month
+gwh_total <- ngm_t$GWh
+gwh_coal  <- ngm_c$GWh
+gwh_wind  <- ngm_w$GWh
+
+# all of em
+ngm_a <- cbind.data.frame(month, gwh_total, gwh_coal, gwh_wind)
+
+plot(ngm_a)
+
+ggpairs(ngm_a)
+```
+
+
+
+```{r}
+
+
+plot(ngm_a$gwh_wind, ngm_a$gwh_coal)
+
+lm <- lm(gwh_coal ~ gwh_wind,data=ngm_a)
+lm.sum <- summary(lm)
+
+ggplot()
+
+```
+
+
+```{r}
+ggplot(data = ngm_a, aes(x = gwh_wind/1000, y = gwh_coal/1000, color=month)) +
+  geom_point() +
+  labs( title = "Relationship Between Wind and Coal Electricity Production",subtitle =  "ERCOT, 2001-2019", color = "Year") +
+  xlab("Electricity Generated From Wind (GWh)") +
+  ylab("Electricity Generated From Coal (GWh)") +
+#  scale_x_discrete(limits = c(2012:2019)) +
+  scale_y_continuous(limits = c(0,16)) +
+  scale_color_date(limits=c(2000, 2020)) +
+  #  ggtitle("Relationship Between Wind and Coal Electricity Production, Texas 2001-2019") +
+  geom_smooth(method = "lm", color = "red")
+```
+
+
+
+
+
+
+
+
+
+
+

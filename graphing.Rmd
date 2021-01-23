@@ -1,0 +1,113 @@
+---
+title: "Graphing Our Dataset"
+author: "Eli Ramthun"
+date: "2/12/2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+
+```{r echo = FALSE,include=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(usmap)
+library(readr)
+library(plyr)
+library(xts)
+library(ggplot2)
+```
+
+
+
+```{r}
+# Wind Turbine Stuff
+# import CSV data
+uswtdb <- read_csv("uswtdb_v2_3_20200109.csv")
+# make dataframe of just texan turbines
+tx_wtdb <- uswtdb[uswtdb$t_state == "TX", ] 
+
+# plot a histogram
+hist(tx_wtdb$p_year, main = "Annual Turbine Installations in Texas", ylab = "Installations", xlab = "Year")
+
+# plot a scatterplot
+plot(tx_wtdb$p_year, tx_wtdb$t_cap,xlab = "Year of Installation", ylab = "Capacity (kW)", main = "Texan Wind Tubine Installation Year and Generation Capacity")
+
+# TODO: cumulative generation capacity
+```
+
+
+```{r}
+# This chunk gets a little geospatial. ArcGIS is probably a better place to do this sort of analysis
+
+# Thanks SO for this tool to filter down my data and sum by unique value
+# I.E. a row for each cty, with the sum of the kW of turbines installed
+# https://stackoverflow.com/questions/11782030/sum-by-distinct-column-value-in-r
+
+county_mw <-ddply(tx_wtdb, "t_fips", transform, t_cap=sum(t_cap))
+county_mw <- subset(county_mw, !duplicated(t_fips))
+county_mw <- data.frame(county_mw[c(8)], county_mw[c(15)])
+
+# Renaming county fips code column for the usmap library's specifications
+names(county_mw)[names(county_mw) == "t_fips"] <- "fips"
+
+# Dividing by 1000 to convert to MW, as the data here is in kW and that's ugly on the legend.
+county_mw$t_cap <- county_mw$t_cap / 1000
+
+plot_usmap("counties", include = c("TX"), data = county_mw, values = "t_cap") + scale_fill_continuous(name = "MW of Installed Turbine Capacity, 2020") +
+  labs(title = "Wind Turbine Capacity in Texas") + theme(legend.position = "right")
+
+
+```
+
+
+
+
+```{r}
+#monthly wind data from eia
+
+wind_gen_monthly <- read_csv("Net_generation_for_wind_monthly.csv", col_types = cols(Month = col_date(format = "%m/%Y")))
+
+ggplot(data = wind_gen_monthly, aes(x = Month, y = GWh)) +
+  geom_point() +
+  labs(x = "Date",
+    y = "GWh",
+    title = "Monthly Wind  Electricity Generated",
+    subtitle = "Texas, 2001-2019")
+
+```
+
+
+
+
+
+
+```{r}
+# coal time!
+coal_gen_monthly <- read_csv("Net_generation_for_coal_monthly.csv", col_types = cols(Month = col_date(format = "%m/%Y")))
+
+ggplot(data = coal_gen_monthly, aes(x = Month, y = GWh)) +
+  geom_point() +
+  labs(x = "Date",
+    y = "GWh",
+    title = "Monthly Coal Fired Electricity Generated",
+    subtitle = "Texas, 2001-2019")
+```
+
+
+
+```{r}
+# Naive Modeling
+
+merged.data <- merge(wind_gen_monthly, coal_gen_monthly, by.x = "Month", by.y = "Month")
+
+lm <- lm(GWh.y ~ GWh.x, data = merged.data)
+lm.sum <- summary(lm)
+
+plot(merged.data$Month,merged.data$GWh.y, type ="l", col = "red", main = "Comparing Coal and Wind Electricity Generation", sub = "Texas, (2001-2019)", ylab = "GWh", xlab = "Date") + points(merged.data$Month,merged.data$GWh.x, type ="l", col = "blue") 
+
+#+ legend(10, 10, legend = c("Coal", "Wind"), col = c("red", "green"))
+
+
+```
+

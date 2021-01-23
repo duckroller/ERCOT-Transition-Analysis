@@ -1,0 +1,593 @@
+---
+title: "eGRID Data Cleaning"
+author: "Eli Ramthun"
+date: "4/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+
+#clean workspace
+rm(list = ls())
+
+```
+
+## eGRID Data
+
+eGRID is a database updated biannually by the EPA that provides information on power plant generation, emissions, capacity factors, and other information. This file is set up to parse eGRID data from 2000-2018 into digestible R dataframes.
+
+The first couple chunks will be parsing out data from the 2000 release.
+
+##2000
+
+```{r }
+#This pulls in all the eGRID data from 2000. Separate chunk because it takes a minute
+eGRID2000_plant <- read_excel("eGRID_files/eGRID2000_plant.xls", 
+     sheet = "EGRDPLNT00", col_types = c("numeric", 
+         "text", "text", "text", "numeric", 
+         "text", "numeric", "text", "text", 
+         "numeric", "text", "numeric", "numeric", 
+         "text", "text", "numeric", "text", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "numeric", "numeric", 
+         "text", "numeric", "text", "text", 
+         "text", "numeric", "text", "numeric", 
+         "text", "text", "text", "text", "text", 
+         "numeric", "text", "text", "text", 
+         "text", "text", "text", "text", "text", 
+         "numeric", "numeric", "text", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "text", "numeric", 
+         "numeric", "numeric", "numeric", 
+        "text", "numeric", "numeric", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "text", "numeric", 
+         "numeric", "numeric", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "text", "numeric", 
+         "numeric", "text", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "numeric", "numeric", "numeric", 
+         "text", "text", "text"), skip = 3)
+```
+
+``` {r }
+#This selects it down to ERCOT
+
+eGRID2000_texas <- subset(eGRID2000_plant, eGRID2000_plant$`NERC
+Location (operator)-based NERC region acronym` == "ERCOT")
+
+#Selecting our relevant variables
+
+eGRID2000_texas_subset <- subset(eGRID2000_texas, select = c(4,9,22:25,29,31,33,51))
+```
+
+``` {r}
+#Renaming the bad variable names
+
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "PNAME\nPlant name"] <- "plant_name"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "OPRNAME\nPlant operator name"] <- "operator_name"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "FIPSCNY\nPlant FIPS county code"] <- "county_fips"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "CNTYNAME\nPlant county name"] <- "county_name"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "LAT\nPlant latitude"] <- "latitude"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "LON\nPlant longitude"] <- "longitude"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "PLPRIMFL\nPlant primary fuel"] <- "fuel_type"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "CAPFAC\nPlant capacity factor"] <- "capacity_factor"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "NAMEPCAP\nPlant generator capacity (MW)"] <- "nameplate_capacity"
+names(eGRID2000_texas_subset)[names(eGRID2000_texas_subset) == "PLNGENAN\nPlant 2000 annual net generation (MWh)"] <- "annual_net_generation"
+
+# flipping the nonnegative longitude
+
+eGRID2000_texas_subset$longitude <- eGRID2000_texas_subset$longitude * (-1)
+
+# adding a year column and a fresh title for the df
+
+eGRID2000 <- cbind(year=2000,eGRID2000_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2000.
+rm(list = c("eGRID2000_plant","eGRID2000_texas","eGRID2000_texas_subset"))
+
+```
+
+
+Ok, now the 2000 variables we care about are stored in eGRID2000.
+
+`r head(eGRID2000)`
+
+Let's move on to the next one, from 2004.
+
+##2004
+
+```{r}
+#As before, one big table
+eGRID2004_plant <- read_excel("eGRID_files/eGRID2004_plant.xls", sheet = "EGRDPLNT04", skip = 4)
+```
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2004_texas <- subset(eGRID2004_plant, eGRID2004_plant$NERC == "ERCOT")
+
+#Selecting our relevant variables - now that the colnames are less long I'm gonna select by name instead of column number
+
+eGRID2004_texas_subset <- subset(eGRID2004_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLPRMFL","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "LON"] <- "longitude"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "PLPRMFL"] <- "fuel_type"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2004_texas_subset)[names(eGRID2004_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2004 <- cbind(year=2004,eGRID2004_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2004.
+rm(list = c("eGRID2004_plant","eGRID2004_texas","eGRID2004_texas_subset"))
+
+```
+
+Great, here's the 2004 data.
+
+`r head(eGRID2004)`
+
+Next, 2005. Hopefully the format starts to even out...
+
+##2005
+
+```{r}
+eGRID2005_plant <- read_excel("eGRID_files/eGRID2005_plant.xls", sheet = "PLNT05", skip = 4)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT - a little different here than previously, with SBRGN instead of NERC. shouldn't matter here, as we're only looking at ERCOT plants anyway
+
+eGRID2005_texas <- subset(eGRID2005_plant, eGRID2005_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables - now I'm grateful these are the same names as 2004!
+
+eGRID2005_texas_subset <- subset(eGRID2005_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLPRMFL","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "LON"] <- "longitude"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "PLPRMFL"] <- "fuel_type"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2005_texas_subset)[names(eGRID2005_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2005 <- cbind(year=2005,eGRID2005_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2005.
+rm(list = c("eGRID2005_plant","eGRID2005_texas","eGRID2005_texas_subset"))
+
+```
+
+Nice, here's 2005.
+
+`r head(eGRID2005)`
+
+Next, 2007.
+
+##2007
+
+```{r}
+eGRID2007_plant <- read_excel("eGRID_files/eGRID2007_plant.xls", sheet = "PLNT07", skip = 4)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2007_texas <- subset(eGRID2007_plant, eGRID2007_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables 
+
+eGRID2007_texas_subset <- subset(eGRID2007_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLPRMFL","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "LON"] <- "longitude"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "PLPRMFL"] <- "fuel_type"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2007_texas_subset)[names(eGRID2007_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2007 <- cbind(year=2007,eGRID2007_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2007.
+rm(list = c("eGRID2007_plant","eGRID2007_texas","eGRID2007_texas_subset"))
+
+```
+
+2007 down.
+
+`r head(eGRID2007)`
+
+Now, 2009:
+
+##2009
+
+```{r}
+eGRID2009_plant <- read_excel("eGRID_files/eGRID2009_data.xls", sheet = "PLNT09", skip = 4)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2009_texas <- subset(eGRID2009_plant, eGRID2009_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables 
+
+eGRID2009_texas_subset <- subset(eGRID2009_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLPRMFL","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "LON"] <- "longitude"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "PLPRMFL"] <- "fuel_type"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2009_texas_subset)[names(eGRID2009_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2009 <- cbind(year=2009,eGRID2009_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2009.
+rm(list = c("eGRID2009_plant","eGRID2009_texas","eGRID2009_texas_subset"))
+
+```
+
+
+as is tradition:
+
+`r head(eGRID2009)`
+
+Now, 2010:
+
+##2010
+
+```{r}
+eGRID2010_plant <- read_excel("eGRID_files/eGRID2010_Data.xls", sheet = "PLNT10", skip = 4)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2010_texas <- subset(eGRID2010_plant, eGRID2010_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables 
+
+eGRID2010_texas_subset <- subset(eGRID2010_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLPRMFL","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r echo=FALSE}
+#Renaming the bad variable names
+
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "LON"] <- "longitude"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "PLPRMFL"] <- "fuel_type"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2010_texas_subset)[names(eGRID2010_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2010 <- cbind(year=2010,eGRID2010_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2010.
+rm(list = c("eGRID2010_plant","eGRID2010_texas","eGRID2010_texas_subset"))
+
+```
+
+`r head(eGRID2010)`
+
+Next, 2012:
+
+##2012
+
+```{r}
+eGRID2012_plant <- read_excel("eGRID_files/eGRID2012_Data.xlsx", sheet = "PLNT12", skip = 4)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2012_texas <- subset(eGRID2012_plant, eGRID2012_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables 
+
+eGRID2012_texas_subset <- subset(eGRID2012_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLPRMFL","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "LON"] <- "longitude"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "PLPRMFL"] <- "fuel_type"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2012_texas_subset)[names(eGRID2012_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2012 <- cbind(year=2012,eGRID2012_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2012.
+rm(list = c("eGRID2012_plant","eGRID2012_texas","eGRID2012_texas_subset"))
+
+```
+
+`r head(eGRID2012)`
+
+Sweet. On to 2014:
+
+##2014
+
+```{r}
+eGRID2014_plant <- read_excel("eGRID_files/eGRID2014_Data_v2.xlsx", sheet = "PLNT14", skip = 1)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2014_texas <- subset(eGRID2014_plant, eGRID2014_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables 
+
+eGRID2014_texas_subset <- subset(eGRID2014_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLFUELCT","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "LON"] <- "longitude"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "PLFUELCT"] <- "fuel_type"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2014_texas_subset)[names(eGRID2014_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2014 <- cbind(year=2014,eGRID2014_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2014.
+rm(list = c("eGRID2014_plant","eGRID2014_texas","eGRID2014_texas_subset"))
+
+```
+
+The eGRID data is getting way nicer, I'm not getting errors on imports anymore! Yay.
+
+`r head(eGRID2014)`
+
+Next, 2016:
+
+##2016
+
+```{r}
+eGRID2016_plant <- read_excel("eGRID_files/eGRID2016_data.xlsx", sheet = "PLNT16", skip = 1)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2016_texas <- subset(eGRID2016_plant, eGRID2016_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables 
+
+eGRID2016_texas_subset <- subset(eGRID2016_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLFUELCT","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "LON"] <- "longitude"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "PLFUELCT"] <- "fuel_type"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2016_texas_subset)[names(eGRID2016_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2016 <- cbind(year=2016,eGRID2016_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2016.
+rm(list = c("eGRID2016_plant","eGRID2016_texas","eGRID2016_texas_subset"))
+
+```
+
+
+`r head(eGRID2016)`
+
+Nice, that's all the historic data back to 2000. Our next file ill be the most recent data, from 2018.
+
+##2018
+
+```{r}
+eGRID2018_plant <- read_excel("eGRID_files/eGRID2018_data.xlsx", sheet = "PLNT18", skip = 1)
+
+```
+
+
+```{r}
+#This selects it down to ERCOT
+
+eGRID2018_texas <- subset(eGRID2018_plant, eGRID2018_plant$SUBRGN == "ERCT")
+
+#Selecting our relevant variables 
+
+eGRID2018_texas_subset <- subset(eGRID2018_texas, select = c("PNAME","OPRNAME","FIPSCNTY","CNTYNAME","LAT","LON","PLFUELCT","CAPFAC","NAMEPCAP","PLNGENAN"))
+```
+
+```{r}
+#Renaming the bad variable names
+
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "PNAME"] <- "plant_name"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "OPRNAME"] <- "operator_name"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "FIPSCNTY"] <- "county_fips"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "CNTYNAME"] <- "county_name"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "LAT"] <- "latitude"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "LON"] <- "longitude"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "PLFUELCT"] <- "fuel_type"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "CAPFAC"] <- "capacity_factor"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "NAMEPCAP"] <- "nameplate_capacity"
+names(eGRID2018_texas_subset)[names(eGRID2018_texas_subset) == "PLNGENAN"] <- "annual_net_generation"
+
+# adding a year column and a fresh title for the df
+
+eGRID2018 <- cbind(year=2018,eGRID2018_texas_subset)
+
+# cleaning up scratch df's used to generate eGRID2018.
+rm(list = c("eGRID2018_plant","eGRID2018_texas","eGRID2018_texas_subset"))
+
+```
+
+
+`r head(eGRID2018)`
+
+## ALL YEARS
+
+Great, now we have 10 years of eGRID data in their own DF's. Let's merge them all!
+
+```{r}
+
+eGRID_ercot <- rbind(eGRID2000, eGRID2004, eGRID2005, eGRID2007, eGRID2009, eGRID2010, eGRID2012, eGRID2014, eGRID2016, eGRID2018)
+
+eGRID_ercot <- na.omit(eGRID_ercot)
+```
+
+#now, let's clean up bad fuel_type names
+
+```{r}
+eGRID_ercot <- eGRID_ercot %>% 
+  mutate(fuel_type = case_when(
+    (fuel_type == "GAS") | (fuel_type == "NG") | (fuel_type =="OG") | (fuel_type == "LFG") | (fuel_type =="RG") | (fuel_type == "DG") ~ "gas",
+    (fuel_type =="WT") | (fuel_type =="WAT") | (fuel_type == "HYDRO") ~ "hydro",
+    (fuel_type =="COL") | (fuel_type =="LIG") | (fuel_type =="SUB") | (fuel_type =="COAL") ~ "coal",
+    (fuel_type =="WND") | (fuel_type =="WIND") ~ "wind",
+    (fuel_type =="NUC") | (fuel_type =="UR") | (fuel_type =="NUCLEAR") ~ "nuclear",
+    (fuel_type =="SUN") | (fuel_type =="SOLAR") ~ "solar",
+    (fuel_type =="DFO") | (fuel_type =="OIL") | (fuel_type =="RFO") ~ "oil",
+    TRUE ~ "other"
+  )
+)
+```
+
+
+# here I'm going to add a column to represent whether a wind resource is coastal or not
+```{r}
+
+eGRID_ercot$coastal <- ifelse((eGRID_ercot$fuel_type == "wind")&(eGRID_ercot$latitude >= 26) & (eGRID_ercot$latitude <= 28.3) & (eGRID_ercot$longitude <= -98) & (eGRID_ercot$longitude >= -97), TRUE, FALSE)
+
+```
+
+
+```{r}
+library(psych)
+#describe function is a nice alternative to summary() to get summary statistics of the data
+
+describe(eGRID_ercot)
+
+table(eGRID_ercot$coastal)
+
+table(eGRID_ercot$fuel_type)
+
+#this is less than ideal - I'd love to squish these into better names. WND is wind, NG is natural gas, SUN is solar, LIG is lignite, SUB is subbittuminous coal, etc... Gonna have to comb through the support docs included to know what's what here
+
+```
+
+```{r}
+write.csv(eGRID_ercot,"eGRID_ercot.csv")
+```
+
+```{r}
+
+
+```
+

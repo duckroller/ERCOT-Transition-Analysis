@@ -1,0 +1,802 @@
+---
+title: "Cluster Processing"
+output: html_notebook
+---
+
+This notebook is for doing statistical analysis on my k-means clustered states. The clustering was derived from CO2 emissions data at percentage based sectoral levels from 2017, alongside net total CO2 emissions on a state level basis.
+
+
+```{r}
+library(readr)
+library(readxl)
+library(ggplot2)
+library(tools)
+library(tidyr)
+library(ggpubr)
+library(summarytools)
+
+```
+
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+state_clusters <- read_csv("state_clusters.csv")
+state_clusters$state <- toTitleCase(state_clusters$state)
+
+```
+
+```{r}
+state_emissions_2017 <- read_excel("co2_emissions_profile_by_state.xlsx", skip = 4, n_max = 51,col_names = c("state", "commercial_tons", "electric_power_tons", "residential_tons",	"industrial_tons",	"transportation_tons", "total_tons", "blank", "commercial_pct",	"electric_power_pct",	"residential_pct",	"industrial_pct",	"transportation_pct" 
+))
+
+state_emissions_2017 <- merge(state_emissions_2017, state_clusters, by = "state")
+
+state_emissions_2017 <- state_emissions_2017[-9,]
+
+state_proportions_2017 <- subset(state_emissions_2017, select = -c(2:8))
+state_totals_2017 <- subset(state_emissions_2017, select = c(1:7))
+```
+
+```{r}
+proportions_long <- gather(state_proportions_2017, sector, percent, 2:6, factor_key=TRUE)
+totals_long <- gather(state_totals_2017, sector, tons, 2:7, factor_key=TRUE)
+
+```
+
+```{r}
+ggplot(proportions_long[proportions_long$cluster == 1,], aes(fill=sector, y=percent, x=state)) + 
+    geom_bar(position="fill", stat="identity")+ 
+    scale_color_hue(h = c(180, 300))+ 
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Cluster 1")
+
+ggplot(proportions_long[proportions_long$cluster == 2,], aes(fill=sector, y=percent, x=state)) + 
+    geom_bar(position="fill", stat="identity")+ 
+    scale_color_hue(h = c(180, 300))+ 
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Cluster 2")
+
+ggplot(proportions_long[proportions_long$cluster == 3,], aes(fill=sector, y=percent, x=state)) + 
+    geom_bar(position="fill", stat="identity")+ 
+    scale_color_hue(h = c(180, 300))+ 
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Cluster 3")
+```
+
+
+```{r}
+ggplot(totals_long[totals_long$cluster == 1,], aes(fill=sector, y=tons, x=state)) + 
+    geom_bar(stat="identity")+ 
+    scale_color_hue(h = c(180, 300))+ 
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Cluster 1")
+
+ggplot(totals_long[totals_long$cluster == 2,], aes(fill=sector, y=tons, x=state)) + 
+    geom_bar(stat="identity")+ 
+    scale_color_hue(h = c(180, 300))+ 
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Cluster 2")
+
+ggplot(totals_long[totals_long$cluster == 3,], aes(fill=sector, y=tons, x=state)) + 
+    geom_bar(stat="identity")+ 
+    scale_color_hue(h = c(180, 300))+ 
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Cluster 3")
+```
+
+```{r}
+ggboxplot(totals_long[totals_long$sector != "total_tons",], y = "tons",x="cluster",fill="sector", width = 0.5)
+
+```
+
+```{r}
+ggqqplot(totals_long[totals_long$sector == "total_tons",], x = "tons")
+
+```
+
+```{r}
+summary(state_totals_2017, digits =2)
+```
+
+```{r}
+stby(data = state_totals_2017,
+     INDICES = state_totals_2017$cluster, # by Species
+     FUN = descr, # descriptive statistics
+     stats = "common") # most common descr. stats
+```
+
+```{r}
+library(psych)
+describeBy(state_totals_2017, state_totals_2017$cluster) # grouping variable
+```
+
+
+
+```{r}
+# library
+library(treemap)
+ 
+# Build Dataset
+group <- c(rep("group-1",4),rep("group-2",2),rep("group-3",3))
+subgroup <- paste("subgroup" , c(1,2,3,4,1,2,1,2,3), sep="-")
+value <- c(13,5,22,12,11,7,3,1,23)
+data <- data.frame(group,subgroup,value)
+ 
+# treemap
+treemap(totals_long[totals_long$sector=="total_tons",],
+            index=c("cluster","state"),
+            vSize="tons",
+            type="index"
+            ) 
+```
+
+
+```{r}
+
+data <- subset(state_totals_2017, select = c(2:7))
+rownames(data) <- state_totals_2017$state
+
+# Euclidean distance
+dist <- dist(data[ , c(1:6)] , diag=TRUE)
+
+# Hierarchical Clustering with hclust
+hc <- hclust(dist)
+
+# Plot the result
+plot(hc, main = "Actual Value Euclidean Distance Hierarchical Clustering", sub = "Cluster Dendrogram of States by Sectoral Tonnage of 2017 CO2 Emissions")
+```
+
+```{r}
+data <- subset(state_proportions_2017, select = c(2:6))
+rownames(data) <- state_proportions_2017$state
+
+# Euclidean distance
+dist <- dist(data[ , c(1:5)] , diag=TRUE)
+
+# Hierarchical Clustering with hclust
+hc <- hclust(dist)
+
+# Plot the result
+plot(hc, main = "Proportional Euclidean Distance Hierarchical Clustering", sub = "Cluster Dendrogram of States by sectoral proportions of 2017 CO2 emissions")
+```
+
+```{r}
+state_emissions_2017$blank <- NULL
+rownames(state_emissions_2017) <- state_emissions_2017$state
+state_emissions_2017$state <-  NULL
+state_emissions_2017$cluster <- NULL
+
+```
+
+
+
+```{r}
+scaled_emissions <- scale(state_emissions_2017)
+
+```
+
+```{r}
+dist <- dist(scaled_emissions[] , diag=TRUE)
+
+
+# Hierarchical Clustering with hclust
+hc <- hclust(dist)
+
+
+# Plot the result
+plot(hc, main = "scaled Euclidean Distance Hierarchical Clustering", sub = "Cluster Dendrogram of States by sectoral CO2 emissions in 2017")
+```
+
+```{r}
+library(factoextra)
+fviz_dist(dist, 
+   gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+```
+
+```{r}
+d2 <- fviz_dend(hc, k = 2, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          )
+
+d3 <- fviz_dend(hc, k = 3, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          )
+
+d4 <- fviz_dend(hc, k = 4, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          )
+
+d5 <- fviz_dend(hc, k = 5, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          )
+
+d6 <- fviz_dend(hc, k = 6, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          )
+
+d7 <- fviz_dend(hc, k = 7, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          )
+
+d8 <- fviz_dend(hc, k = 8, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          )
+
+d_list <- list(d2, d3, d4, d5, d6, d7, d8)
+
+```
+
+```{r}
+library(gridExtra)
+
+grid.arrange(grobs=d_list, ncol=4)
+
+```
+
+Building small DF's to do clustering on
+
+```{r}
+library(NbClust)
+
+state_proportions_2017 <- subset(state_emissions_2017, select = -c(1:6))
+state_totals_2017 <- subset(state_emissions_2017, select = c(1:6))
+state_industryshare_total_2017 <- subset(state_emissions_2017, select = c(10,6))
+
+scaled_proportions <- scale(state_proportions_2017)
+dist_proportions <- dist(scaled_proportions[], diag=TRUE)
+
+scaled_totals <- scale(state_totals_2017)
+dist_totals <- dist(scaled_totals[], diag=TRUE)
+
+scaled_industrypct_total <- scale(state_industryshare_total_2017)
+dist_industrypct_total <-  dist(scaled_industrypct_total[], diag=TRUE)
+```
+
+# Clustering on All Data
+
+```{r}
+all_data_complete <- NbClust(data = scaled_emissions, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "complete")
+
+k_count <- max(all_data_complete$Best.partition)
+hc <- hclust(dist, method="complete")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="All Data, Furthest Neighbor Clustering", label = "Cluster Dendrogram of States by sectoral CO2 emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/")
+
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_emissions, cluster = sub_grp))
+
+clusters_all_data_euclidean_complete <-  data.frame(all_data_complete$Best.partition)
+```
+
+```{r}
+all_data_single <- NbClust(data = scaled_emissions, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "single")
+
+k_count <- max(all_data_single$Best.partition)
+hc <- hclust(dist, method="single")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="All Data, Nearest Neighbor Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_emissions, cluster = sub_grp))
+
+clusters_all_data_euclidean_single <-  data.frame(all_data_single$Best.partition)
+```
+
+```{r}
+all_data_average <- NbClust(data = scaled_emissions, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "average")
+
+k_count <- max(all_data_average$Best.partition)
+hc <- hclust(dist, method="average")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="All Data, Simple Average Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_emissions, cluster = sub_grp))
+
+clusters_all_data_euclidean_average <-  data.frame(all_data_average$Best.partition)
+
+
+```
+
+```{r}
+all_data_ward <- NbClust(data = scaled_emissions, diss = NULL, distance = "euclidean", min.nc = 3, max.nc = 10, method = "ward.D2")
+
+k_count <- max(all_data_ward$Best.partition)
+hc <- hclust(dist, method="ward.D2")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="All Data, Ward's Minimum Variance Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_emissions, cluster = sub_grp))
+
+clusters_all_data_euclidean_ward <-  data.frame(all_data_ward$Best.partition)
+
+
+```
+
+# Clustering on Proportions
+
+```{r}
+proportions_complete <- NbClust(data = scaled_proportions, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "complete")
+
+
+k_count <- max(proportions_complete$Best.partition)
+hc <- hclust(dist_proportions, method="complete")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral Proportions by State, Furthest Neighbor Clustering", label = "Cluster Dendrogram of States by sectoral CO2 emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/")
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_proportions, cluster = sub_grp))
+
+clusters_proportions_euclidean_complete <-  data.frame(proportions_complete$Best.partition)
+```
+
+```{r}
+proportions_single <- NbClust(data = scaled_proportions, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "single")
+
+k_count <- max(proportions_single$Best.partition)
+hc <- hclust(dist_proportions, method="single")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral Proportions by State, Nearest Neighbor Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_proportions, cluster = sub_grp))
+
+clusters_proportions_euclidean_single <-  data.frame(proportions_single$Best.partition)
+```
+
+```{r}
+proportions_average <- NbClust(data = scaled_proportions, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "average")
+
+k_count <- max(proportions_average$Best.partition)
+hc <- hclust(dist_proportions, method="average")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral Proportions by State, Simple Average Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_proportions, cluster = sub_grp))
+
+clusters_proportions_euclidean_average <-  data.frame(proportions_average$Best.partition)
+
+
+```
+
+```{r}
+proportions_ward <- NbClust(data = scaled_emissions, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "ward.D2")
+
+k_count <- max(proportions_ward$Best.partition)
+hc <- hclust(dist_proportions, method="ward.D2")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral Proportions by State, Ward's Minimum Variance Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_proportions, cluster = sub_grp))
+
+clusters_proportions_euclidean_ward <-  data.frame(proportions_ward$Best.partition)
+
+
+```
+
+# Clustering on Net CO2 Emissions
+
+```{r}
+totals_complete <- NbClust(data = scaled_totals, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "complete")
+
+k_count <- max(totals_complete$Best.partition)
+hc <- hclust(dist_totals, method="complete")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral totals by State, Furthest Neighbor Clustering", label = "Cluster Dendrogram of States by sectoral CO2 emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/")
+
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_totals, cluster = sub_grp))
+
+clusters_totals_euclidean_complete <-  data.frame(totals_complete$Best.partition)
+```
+
+```{r}
+totals_single <- NbClust(data = scaled_totals, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "single")
+
+k_count <- max(totals_single$Best.partition)
+hc <- hclust(dist_totals, method="single")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral totals by State, Nearest Neighbor Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_totals, cluster = sub_grp))
+
+clusters_totals_euclidean_single <-  data.frame(totals_single$Best.partition)
+```
+
+```{r}
+#totals_average <- NbClust(data = scaled_totals, diss = NULL, distance = "euclidean",        min.nc = 2, max.nc = 10, method = "average")
+
+hc <- hclust(dist_totals, method="average")
+
+# Plot the result
+fviz_dend(hc, k = 3, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral totals by State, Simple Average Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+
+sub_grp <- cutree(hc, k = 3)
+fviz_cluster(list(data = scaled_totals, cluster = sub_grp))
+
+#clusters_totals_euclidean_average <-  data.frame(totals_average$Best.partition)
+
+print("The data and clustering algorithm here are misbehaving. Possibly worth revisiting.")
+```
+
+```{r}
+totals_ward <- NbClust(data = scaled_emissions, diss = NULL, distance = "euclidean",
+        min.nc = 2, max.nc = 10, method = "ward.D2")
+
+k_count <- max(totals_ward$Best.partition)
+hc <- hclust(dist_totals, method="ward.D2")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral Totals by State, Ward's Minimum Variance Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_totals, cluster = sub_grp))
+
+clusters_totals_euclidean_ward <-  data.frame(totals_ward$Best.partition)
+
+
+```
+
+# Clustering on Industrial % and Total Net CO2 Emissions
+
+```{r}
+industrypct_total_complete <- NbClust(data = scaled_industrypct_total, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "complete")
+
+k_count <- max(industrypct_total_complete$Best.partition)
+hc <- hclust(dist_industrypct_total, method="complete")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral industrypct_total by State, Furthest Neighbor Clustering", label = "Cluster Dendrogram of States by sectoral CO2 emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/")
+
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_industrypct_total, cluster = sub_grp))
+
+clusters_industrypct_total_euclidean_complete <-  data.frame(industrypct_total_complete$Best.partition)
+```
+
+```{r}
+industrypct_total_single <- NbClust(data = scaled_industrypct_total, diss = NULL, distance = "euclidean",
+        min.nc = 3, max.nc = 10, method = "single")
+
+k_count <- max(industrypct_total_single$Best.partition)
+hc <- hclust(dist_industrypct_total, method="single")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral industrypct_total by State, Nearest Neighbor Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_industrypct_total, cluster = sub_grp))
+
+clusters_industrypct_total_euclidean_single <-  data.frame(industrypct_total_single$Best.partition)
+```
+
+```{r}
+industrypct_total_average <- NbClust(data = scaled_industrypct_total, diss = NULL, distance = "euclidean",        min.nc = 2, max.nc = 10, method = "average")
+
+k_count <- max(industrypct_total_average$Best.partition)
+hc <- hclust(dist_industrypct_total, method="average")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral industrypct_total by State, Simple Average Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_industrypct_total, cluster = sub_grp))
+
+clusters_industrypct_total_euclidean_average <-  data.frame(industrypct_total_average$Best.partition)
+
+
+```
+
+```{r}
+industrypct_total_ward <- NbClust(data = scaled_industrypct_total, diss = NULL, distance = "euclidean",
+        min.nc = 2, max.nc = 10, method = "ward.D2")
+
+k_count <- max(industrypct_total_ward$Best.partition)
+hc <- hclust(dist_industrypct_total, method="ward.D2")
+
+# Plot the result
+fviz_dend(hc, k = k_count, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="Sectoral industrypct_total by State, Ward's Minimum Variance Clustering", label = "Cluster Dendrogram of States by Sectoral CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA. https://www.eia.gov/environment/emissions/state/") 
+
+sub_grp <- cutree(hc, k = k_count)
+fviz_cluster(list(data = scaled_industrypct_total, cluster = sub_grp))
+
+clusters_industrypct_total_euclidean_ward <-  data.frame(industrypct_total_ward$Best.partition)
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+state_gdp <- data.frame(read_excel("gdp_by_state_2017_bea.xls", 
+    range = "B6:C58"))
+
+rownames(state_gdp) <- state_gdp$GeoName
+state_gdp$GDP <- state_gdp$X2017
+state_gdp$GeoName <- NULL
+state_gdp$X2017 <-  NULL
+
+gdp_total_emissions <- merge(state_gdp, subset(state_totals_2017, select= 6), by = 0)
+rownames(gdp_total_emissions) <- gdp_total_emissions$Row.names
+gdp_total_emissions$Row.names <- NULL
+
+
+scaled_gdp_emissions <- scale(gdp_total_emissions)
+dist_gdp_emissions <-  dist(scaled_gdp_emissions[], diag=TRUE)
+```
+
+
+
+```{r}
+gdp_emissions_ward <- NbClust(data = scaled_gdp_emissions, diss = NULL, distance = "euclidean",
+        min.nc = 2, max.nc = 10, method = "ward.D2")
+
+k_count <- max(gdp_emissions_ward$Best.partition)
+hc <- hclust(dist_gdp_emissions, method="ward.D2")
+
+# Plot the result
+fviz_dend(hc, k = 3, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+          color_labels_by_k = TRUE,# color labels by groups
+          rect = TRUE# Add rectangle around groups
+          ) +
+  ggtitle(subtitle="GDP and CO2 Emissions by State, Ward's Minimum Variance Clustering", label = "Cluster Dendrogram of States by GDP and CO2 Emissions in 2017")+
+  labs(caption = "Data: EIA: https://www.eia.gov/environment/emissions/state/ BEA: https://apps.bea.gov/itable/index.cfm") 
+
+sub_grp <- cutree(hc, k = 3)
+fviz_cluster(list(data = scaled_gdp_emissions, cluster = sub_grp)) + ylab("Scaled CO2 Emissions (Tons)") + xlab("Scaled GDP ($)") + ggtitle("Cluster Plot using Ward's Clustering", subtitle = "CO2 Emissions and State GDP, 2017")+
+  labs(caption = "Data: EIA: https://www.eia.gov/environment/emissions/state/ BEA: https://apps.bea.gov/itable/index.cfm") 
+
+
+```
+
+
+make it a function, dummy!
+ 
+Todo:
+`r todo`
+
+
+
+
+
+Next: output a dataframe like:
+
+
+State   | Cluster # | Algorithm | Total tons | Transit % | ...
+Alabama | 2         | K-means   |   7895480  |    5.7    | ...  
+...     |    ...    | ...       |   ...      |    ...    | ...
+
+or like:
+
+State   | K-means # | HCL Proportion #  | Total tons | Transit % | ...
+Alabama | 2         |       3           |   7895480  |    5.7    | ...  
+...     |    ...    | ...               |   ...      |    ...    | ...
+
+first is preferred here I think for plotting, scond seems easier to build
+
+
+
+
+
+```{r}
+  x <- subset(state_proportions_2017, select = c(1,3))
+  y <- subset(state_totals_2017, select = c(1,7))
+  mtd <-  "complete"
+  min_nodes <- 3
+  fv_dend <- TRUE
+  fv_clust <- TRUE
+
+  merged_data <- merge(x, y, by = "state")
+  rownames(merged_data) <- merged_data$state
+  merged_data$state <- NULL
+  
+  print(merged_data)
+  
+  scaled_data <- scale(merged_data)
+  dist_data <- dist(scaled_data[], diag=TRUE)
+  
+  nbclust_data <- NbClust(data = scaled_data, diss = NULL, distance = "euclidean", min.nc = min_nodes, max.nc = 10, method = mtd)
+  
+  k_count <- max(nbclust_data$Best.partition)
+  h_clust <- hclust(dist_data, method = mtd)
+  
+  if(fv_dend){
+    fvd <- fviz_dend(h_clust, k = k_count, # Cut in four groups
+              cex = 0.5, # label size
+              k_colors = c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"), 
+              color_labels_by_k = TRUE,# color labels by groups
+              rect = TRUE# Add rectangle around groups
+              )
+  } else {fvd <- NA}
+  
+  if(fv_clust){
+    sub_grp <- cutree(h_clust, k = k_count)
+    fvc <- fviz_cluster(list(data = scaled_data, cluster = sub_grp))
+  } else {fvc <- NA}
+  
+  clust <- merge(merged_data, nbclust_data$Best.partition, by = 0)
+  
+  output <- list(clusters = clust, hc = h_clust, nbc = nbclust_data, k = k_count, graphs = list(dendrogram = fvd, cluster_graph = fvc))
+```
+
+
+```{r}
+source("bivariate_clustering.R")
+
+pwr_pct_and_total_tons <- bivariate_clustering(subset(state_proportions_2017, select = c(1,3)),subset(state_totals_2017, select = c(1,7)))
+```
+
+

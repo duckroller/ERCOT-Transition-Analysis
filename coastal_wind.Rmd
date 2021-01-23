@@ -1,0 +1,143 @@
+---
+title: "Coastal Wind Analysis in ERCOT"
+output: html_notebook
+---
+
+
+```{r}
+library(ggplot2)
+library(readr)
+```
+
+```{r}
+```
+
+
+```{r}
+# calcualte total annual wind netgen
+
+wind_netgen_2000 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2000, select = annual_net_generation))
+wind_netgen_2004 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2004, select = annual_net_generation))
+wind_netgen_2005 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2005, select = annual_net_generation))
+wind_netgen_2007 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2007, select = annual_net_generation))
+wind_netgen_2009 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2009, select = annual_net_generation))
+wind_netgen_2010 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2010, select = annual_net_generation))
+wind_netgen_2012 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2012, select = annual_net_generation))
+wind_netgen_2014 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2014, select = annual_net_generation))
+wind_netgen_2016 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2016, select = annual_net_generation))
+wind_netgen_2018 <- sum(subset(eGRID_ercot, fuel_type=="wind" & year==2018, select = annual_net_generation))
+
+```
+
+```{r}
+#calcualte coastal annual netgen
+
+coastal_netgen_2000 <- 0
+coastal_netgen_2004 <- 0
+coastal_netgen_2005 <- 0
+coastal_netgen_2007 <- 0
+coastal_netgen_2009 <- sum(subset(eGRID_ercot, coastal==TRUE & year==2009, select = annual_net_generation))
+coastal_netgen_2010 <- sum(subset(eGRID_ercot, coastal==TRUE & year==2010, select = annual_net_generation))
+coastal_netgen_2012 <- sum(subset(eGRID_ercot, coastal==TRUE & year==2012, select = annual_net_generation))
+coastal_netgen_2014 <- sum(subset(eGRID_ercot, coastal==TRUE & year==2014, select = annual_net_generation))
+coastal_netgen_2016 <- sum(subset(eGRID_ercot, coastal==TRUE & year==2016, select = annual_net_generation))
+coastal_netgen_2018 <- sum(subset(eGRID_ercot, coastal==TRUE & year==2018, select = annual_net_generation))
+
+```
+
+```{r}
+#go ahead and calculate non-coastal wind netgen
+
+noncostal_netgen_2000 <- wind_netgen_2000 - coastal_netgen_2000
+noncostal_netgen_2004 <- wind_netgen_2004 - coastal_netgen_2004
+noncostal_netgen_2005 <- wind_netgen_2005 - coastal_netgen_2005
+noncostal_netgen_2007 <- wind_netgen_2007 - coastal_netgen_2007
+noncostal_netgen_2009 <- wind_netgen_2009 - coastal_netgen_2009
+noncostal_netgen_2010 <- wind_netgen_2010 - coastal_netgen_2010
+noncostal_netgen_2012 <- wind_netgen_2012 - coastal_netgen_2012
+noncostal_netgen_2014 <- wind_netgen_2014 - coastal_netgen_2014
+noncostal_netgen_2016 <- wind_netgen_2016 - coastal_netgen_2016
+noncostal_netgen_2018 <- wind_netgen_2018 - coastal_netgen_2018
+```
+
+```{r}
+# lets get some baseline coal data in here
+
+coal_netgen_2000 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2000, select = annual_net_generation))
+coal_netgen_2004 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2004, select = annual_net_generation))
+coal_netgen_2005 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2005, select = annual_net_generation))
+coal_netgen_2007 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2007, select = annual_net_generation))
+coal_netgen_2009 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2009, select = annual_net_generation))
+coal_netgen_2010 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2010, select = annual_net_generation))
+coal_netgen_2012 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2012, select = annual_net_generation))
+coal_netgen_2014 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2014, select = annual_net_generation))
+coal_netgen_2016 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2016, select = annual_net_generation))
+coal_netgen_2018 <- sum(subset(eGRID_ercot, fuel_type == "coal" & year == 2018, select = annual_net_generation))
+```
+
+
+```{r}
+
+coastal <- data.frame("year" = c(2009,2010,2012,2014,2016,2018), "wind_netgen_total" = c(wind_netgen_2009,wind_netgen_2010,wind_netgen_2012,wind_netgen_2014 ,wind_netgen_2016,wind_netgen_2018), "coal_netgen" = c(coal_netgen_2009, coal_netgen_2010, coal_netgen_2012, coal_netgen_2014, coal_netgen_2016, coal_netgen_2018), "coastal_wind" = c(coastal_netgen_2009,coastal_netgen_2010,coastal_netgen_2012,coastal_netgen_2014,coastal_netgen_2016,coastal_netgen_2018), "noncoastal_wind" = c(noncostal_netgen_2009,noncostal_netgen_2010,noncostal_netgen_2012,noncostal_netgen_2014,noncostal_netgen_2016,noncostal_netgen_2018))
+
+```
+
+
+```{r}
+cat.coastal <- data.frame("wind_netgen" = c(coastal$coastal_wind, coastal$noncoastal_wind), "coal_netgen" = c(coastal$coal_netgen, coastal$coal_netgen), "coastal" = c(rep("coastal", 6), rep("noncoastal", 6)))
+```
+
+
+```{r}
+ggplot(cat.coastal, aes(x = wind_netgen, y = coal_netgen, color = coastal)) +
+  geom_point() +
+  labs(x = "Wind Farm Net Generation (MWh)", y = "Coal Net Generation (MWh)", color = "Kind of Wind Farms",
+       title = "Coastal and Noncoastal Wind Generations Influence on Coal Generation", 
+  subtitle = "ERCOT, 2009 - 2018. Data from EPA.") +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme(legend.position = c(0.8, 0.85))
+```
+
+```{r}
+# linear models to refelct these trends
+
+coastal.lin.mod <- lm(coal_netgen ~ coastal_wind, data=coastal)
+summary(coastal.lin.mod)
+
+noncoastal.lin.mod <- lm(coal_netgen ~ noncoastal_wind, data=coastal)
+summary(noncoastal.lin.mod)
+
+```
+
+Let's try again, with the USWTDB data...
+
+```{r}
+library(readr)
+uswtdb <- read_csv("uswtdb_v2_3_20200109.csv")
+```
+
+
+Trim down to TX
+
+```{r}
+txwtdb <- subset(uswtdb, t_state == "TX")
+
+library(psych)
+
+table(txwtdb$p_year)
+```
+
+Grab annual installation figures
+
+```{r}
+#wtdb_cap_1999 <- sum(subset(txwtdb, p_year==2001, select = t_cap))
+for(i in c(1999,2001,2003,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)) {
+ nam <- paste("wtdb_cap_", i, sep = "")
+ sum(subset(txwtdb, p_year==i, select = t_cap))
+ assign(nam, sum(subset(txwtdb, p_year==i, select = t_cap)))
+}
+
+```
+
+
+

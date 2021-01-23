@@ -1,0 +1,273 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Notebook for performing clustering analysis on states emission profiles.
+
+```{r}
+library(readxl)
+library(ggplot2)
+library(tidyr)
+```
+
+```{r}
+rm(list=ls())
+```
+
+
+```{r}
+state_emissions_2017 <- read_excel("co2_emissions_profile_by_state.xlsx", skip = 4, n_max = 51,col_names = c("state", "commercial_tons", "electric_power_tons", "residential_tons",	"industrial_tons",	"transportation_tons", "total_tons", "blank", "commercial_pct",	"electric_power_pct",	"residential_pct",	"industrial_pct",	"transportation_pct" 
+))
+
+
+state_proportions_2017 <- subset(state_emissions_2017, select = -c(2:8))
+state_totals_2017 <- subset(state_emissions_2017, select = c(1:7))
+```
+
+```{r}
+proportions_long <- gather(state_proportions_2017, sector, percent, 2:6, factor_key=TRUE)
+
+```
+
+
+
+```{r}
+ggplot(proportions_long, aes(fill=sector, y=percent, x=state)) + 
+    geom_bar(position="fill", stat="identity")+ 
+    scale_color_hue(h = c(180, 300))+ 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+k-means clustering time. used code from https://data-flair.training/blogs/clustering-in-r-tutorial/
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(factoextra)
+library(gridExtra)
+
+proportions_totals <- cbind(state_proportions_2017, state_totals_2017$total_tons)
+#proportions_totals$state <- state.abb[match(proportions_totals$state,state.name)]
+
+#proportions_totals <- na.omit(proportions_totals)
+
+proportions_wide <- proportions_totals %>% remove_rownames %>% column_to_rownames(var="state")
+
+
+d_frame_p <- scale(proportions_wide)
+head(d_frame_p)
+#table(d_frame_p)
+
+
+
+```
+
+
+
+```{r}
+library(factoextra)
+
+d.dist <- dist(d_frame_p)
+
+fviz_dist(d.dist, 
+   gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+```
+
+How many clusters should we make? We can test for that...
+
+```{r}
+
+fviz_nbclust(d_frame_p, kmeans, method = "gap_stat", nboot = 200)
+fviz_nbclust(d_frame_p, kmeans, method = "wss")
+fviz_nbclust(d_frame_p, kmeans, method = "silhouette")
+
+```
+
+
+
+
+```{r}
+state_kmeans2 <- kmeans(d_frame_p, centers = 2, nstart = 25)
+str(state_kmeans2)
+```
+
+```{r}
+fviz_cluster(state_kmeans2, data = d_frame_p, main = "State Clustering, K = 2")
+```
+
+
+
+```{r}
+ state_kmeans3 <- kmeans(d_frame_p, centers = 3, nstart = 25)  #DataFlair
+ state_kmeans4 <- kmeans(d_frame_p, centers = 4, nstart = 25)  
+ state_kmeans5 <- kmeans(d_frame_p, centers = 5, nstart = 25) 
+
+ #Comparing the Plots
+ plot1 <- fviz_cluster(state_kmeans2, geom = "point", data = d_frame_p) + ggtitle("k = 2")
+ plot2 <- fviz_cluster(state_kmeans3, geom = "point", data = d_frame_p) + ggtitle("k = 3")
+ plot3 <- fviz_cluster(state_kmeans4, geom = "point", data = d_frame_p) + ggtitle("k = 4")
+ plot4 <- fviz_cluster(state_kmeans5, geom = "point", data = d_frame_p) + ggtitle("k = 5")
+ grid.arrange(plot1, plot2, plot3, plot4, nrow = 2)
+```
+
+```{r}
+fviz_cluster(state_kmeans3, data = d_frame_p, main = "State Clusters, K = 3")
+
+state_clusters <- state_kmeans3$cluster
+state_clusters <- data.frame(cluster = state_clusters)
+state_clusters$state <- row.names(state_clusters)
+```
+```{r}
+
+```
+
+```{r}
+
+
+```
+
+
+
+Let's cluster the EPA regions too with this data, just for fun...
+
+```{r}
+# first, let's add region codes to the dataframe
+
+state_totals_2017$state <- state.abb[match(state_totals_2017$state,state.name)]
+state_totals_2017 <- na.omit(state_totals_2017)
+
+state_to_code <- read_csv("state_to_code.csv")
+
+state_totals_2017 <- merge(state_to_code, state_totals_2017, by = "state")
+
+state_totals_2017$state <- NULL
+
+regional_aggregate <- aggregate(.~region_code, state_totals_2017, sum)
+
+
+```
+
+
+```{r}
+
+regional_aggregate <- regional_aggregate %>% remove_rownames %>% column_to_rownames(var="region_code")
+
+
+d_frame <- scale(regional_aggregate)
+head(d_frame)
+
+```
+
+```{r}
+kmeans2 <- kmeans(d_frame, centers = 2, nstart = 25)
+str(kmeans2)
+```
+
+```{r}
+fviz_cluster(kmeans2, data = d_frame)
+```
+
+
+
+```{r}
+ kmeans3 <- kmeans(d_frame, centers = 3, nstart = 25)  #DataFlair
+ kmeans4 <- kmeans(d_frame, centers = 4, nstart = 25)  
+ kmeans5 <- kmeans(d_frame, centers = 5, nstart = 25) 
+
+ #Comparing the Plots
+ plot1 <- fviz_cluster(kmeans2, geom = "point", data = d_frame) + ggtitle("k = 2")
+ plot2 <- fviz_cluster(kmeans3, geom = "point", data = d_frame) + ggtitle("k = 3")
+ plot3 <- fviz_cluster(kmeans4, geom = "point", data = d_frame) + ggtitle("k = 4")
+ plot4 <- fviz_cluster(kmeans5, geom = "point", data = d_frame) + ggtitle("k = 5")
+ grid.arrange(plot1, plot2, plot3, plot4, nrow = 2)
+```
+
+```{r}
+fviz_cluster(kmeans3, data = d_frame)
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+states<-as.data.frame(state.x77)
+states$region <- tolower(rownames(states))
+
+states_map <- map_data("state")
+fact_join <- left_join(states_map, states, by = "region")
+ggplot(fact_join, aes(long, lat, group = group))+
+  geom_polygon(aes(fill =  `Life Exp`), color = "white")+
+  scale_fill_viridis_c(option = "C")+
+  theme_classic()
+```
+
+```{r}
+library(maps)
+us_states <- map_data("state")
+state_clusters$state <- tolower(state_clusters$state)
+us_states_cluster <- left_join(us_states, state_clusters, by = c("region" = "state"))
+
+p <- ggplot(data = us_states_cluster,
+            mapping = aes(x = long, y = lat,
+                          group = group, fill = cluster))
+
+p + geom_polygon(color = "gray40", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+    guides(fill = FALSE)
+
+
+senatePlot <- ggplot()+geom_polygon(data=us_states_cluster,aes(x=long, y=lat, group = group, fill=as.factor(cluster)),color="grey50")+coord_map()
+senatePlot
+
+```
+
+```{r}
+fviz_cluster(kmeans3, data = d_frame)
+
+region_clusters <- kmeans3$cluster
+region_clusters <- data.frame(cluster = region_clusters)
+region_clusters$region <- row.names(region_clusters)
+```
+
+```{r}
+write.csv(state_clusters,"state_clusters.csv", row.names = FALSE)
+write.csv(region_clusters,"region_clusters.csv", row.names = FALSE)
+
+```
+
+
+
+```{r}
+library(choroplethr)
+library(choroplethrMaps)
+
+data(map.states)
+require(ggplot2)
+require(grid)
+
+# simple map of all states.
+ggplot(map.states, aes(long, lat,group=group)) + geom_polygon()
+
+# render Alaska and Hawaii as insets on a map of the contiguous 48 states.
+
+# render lower 48 as a ggplot
+states.48 = map.states[!map.states$region %in% c("alaska", "hawaii"), ]
+base_map     = ggplot(states.48, aes(long, lat,group=group)) + geom_polygon() + theme_clean()
+
+# subset AK and render it
+alaska.df     = map.states[map.states$region=='alaska',]
+alaska.ggplot = ggplot(alaska.df, aes(long, lat, group=group)) + geom_polygon() + theme_clean()
+alaska.grob   = ggplotGrob(alaska.ggplot)
+
+# subset HI and render it
+hawaii.df     = map.states[map.states$region=='hawaii',]
+hawaii.ggplot = ggplot(hawaii.df, aes(long, lat, group=group)) + geom_polygon() + theme_clean()
+hawaii.grob   = ggplotGrob(hawaii.ggplot)
+
+# now render the final image
+base_map +
+ annotation_custom(grobTree(hawaii.grob), xmin=-107.5, xmax=-102.5, ymin=25, ymax=27.5) +
+ annotation_custom(grobTree(alaska.grob), xmin=-125, xmax=-110, ymin=22.5, ymax=30)
+```
+
