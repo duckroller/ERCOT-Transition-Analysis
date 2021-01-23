@@ -36,7 +36,7 @@ vignettes/*.pdf
 *.knit.md
 
 #published notebook files
-
+*.html
 *.nb.html
 
 #don't upload big data files
