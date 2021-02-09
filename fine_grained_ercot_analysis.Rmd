@@ -31,18 +31,18 @@ rm(list=ls())
 Pulling in 2007 data
 
 ```{r}
-Jan_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jan2007", range = "A1:B186")
-Feb_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Feb2007", range = "A1:B186")
-Mar_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Mar2007", range = "A1:B186")
-Apr_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Apr2007", range = "A1:B186")
-May_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "May2007", range = "A1:B186")
-Jun_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jun2007", range = "A1:B186")
-Jul_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jul2007", range = "A1:B186")
-Aug_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Aug2007", range = "A1:B186")
-Sep_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Sep2007", range = "A1:B186")
-Oct_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Oct2007", range = "A1:B186")
-Nov_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Nov2007", range = "A1:B186")
-Dec_2007 <- read_excel("ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Dec2007", range = "A1:B186")
+Jan_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jan2007", range = "A1:B186")
+Feb_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Feb2007", range = "A1:B186")
+Mar_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Mar2007", range = "A1:B186")
+Apr_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Apr2007", range = "A1:B186")
+May_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "May2007", range = "A1:B186")
+Jun_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jun2007", range = "A1:B186")
+Jul_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Jul2007", range = "A1:B186")
+Aug_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Aug2007", range = "A1:B186")
+Sep_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Sep2007", range = "A1:B186")
+Oct_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Oct2007", range = "A1:B186")
+Nov_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Nov2007", range = "A1:B186")
+Dec_2007 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2007.xls", sheet = "Dec2007", range = "A1:B186")
 ```
 
 ```{r}
@@ -91,22 +91,22 @@ Pulling in 2008 data
 
 ```{r}
 # Jan is formatted differently than the others, so it gets special processing. Oy vey.
-Jan_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jan2008", range = "A1:B300")
+Jan_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jan2008", range = "A1:B300")
 Jan_2008$DateFuel <- Jan_2008$`Date - Fuel`
 Jan_2008$`Date - Fuel` <- NULL
 Jan_2008$Total <-  Jan_2008$`Daily MWH` 
 Jan_2008$`Daily MWH` <- NULL
-Feb_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Feb2008", range = "A1:B300")
-Mar_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Mar2008", range = "A1:B300")
-Apr_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Apr2008", range = "A1:B300")
-May_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "May2008", range = "A1:B300")
-Jun_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jun2008", range = "A1:B300")
-Jul_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jul2008", range = "A1:B300")
-Aug_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Aug2008", range = "A1:B300")
-Sep_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Sep2008", range = "A1:B300")
-Oct_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Oct2008", range = "A1:B300")
-Nov_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Nov2008", range = "A1:B300")
-Dec_2008 <- read_excel("ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Dec2008", range = "A1:B300")
+Feb_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Feb2008", range = "A1:B300")
+Mar_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Mar2008", range = "A1:B300")
+Apr_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Apr2008", range = "A1:B300")
+May_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "May2008", range = "A1:B300")
+Jun_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jun2008", range = "A1:B300")
+Jul_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Jul2008", range = "A1:B300")
+Aug_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Aug2008", range = "A1:B300")
+Sep_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Sep2008", range = "A1:B300")
+Oct_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Oct2008", range = "A1:B300")
+Nov_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Nov2008", range = "A1:B300")
+Dec_2008 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2008.xls", sheet = "Dec2008", range = "A1:B300")
 ```
 
 ```{r}
@@ -160,18 +160,18 @@ Pulling in 2009 data
 
 ```{r}
 # Now, Dec is formatted differently than the others, so it gets special processing. Oy vey.
-Jan_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jan09", range = "A1:B300")
-Feb_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Feb09", range = "A1:B300")
-Mar_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Mar09", range = "A1:B300")
-Apr_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Apr09", range = "A1:B300")
-May_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "May09", range = "A1:B300")
-Jun_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jun09", range = "A1:B300")
-Jul_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jul09", range = "A1:B300")
-Aug_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Aug09", range = "A1:B300")
-Sep_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Sep09", range = "A1:B300")
-Oct_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Oct09", range = "A1:B300")
-Nov_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Nov09", range = "A1:B300")
-Dec_2009 <- read_excel("ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Dec09", range = "A1:B300")
+Jan_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jan09", range = "A1:B300")
+Feb_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Feb09", range = "A1:B300")
+Mar_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Mar09", range = "A1:B300")
+Apr_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Apr09", range = "A1:B300")
+May_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "May09", range = "A1:B300")
+Jun_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jun09", range = "A1:B300")
+Jul_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Jul09", range = "A1:B300")
+Aug_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Aug09", range = "A1:B300")
+Sep_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Sep09", range = "A1:B300")
+Oct_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Oct09", range = "A1:B300")
+Nov_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Nov09", range = "A1:B300")
+Dec_2009 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2009.xls", sheet = "Dec09", range = "A1:B300")
 Dec_2009$DateFuel <- Dec_2009$`Date-Fuel`
 Dec_2009$`Date-Fuel` <- NULL
 ```
@@ -223,22 +223,22 @@ Nice. Looks to be in order. Onward!
 
 ```{r}
 # Pick a column header and stick with it, dangit!
-Jan_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jan10", range = "A1:B300")
+Jan_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jan10", range = "A1:B300")
 Jan_2010$`Date-Fuel` <- Jan_2010$DateFuel
 Jan_2010$DateFuel <- NULL
-Feb_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Feb10", range = "A1:B300")
+Feb_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Feb10", range = "A1:B300")
 Feb_2010$`Date-Fuel` <- Feb_2010$DateFuel
 Feb_2010$DateFuel <- NULL
-Mar_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Mar10", range = "A1:B300")
-Apr_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Apr10", range = "A1:B300")
-May_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "May10", range = "A1:B300")
-Jun_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jun10", range = "A1:B300")
-Jul_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jul10", range = "A1:B300")
-Aug_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Aug10", range = "A1:B300")
-Sep_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Sep10", range = "A1:B300")
-Oct_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Oct10", range = "A1:B300")
-Nov_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Nov10", range = "A1:B300")
-Dec_2010 <- read_excel("ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Dec10", range = "A1:B300")
+Mar_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Mar10", range = "A1:B300")
+Apr_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Apr10", range = "A1:B300")
+May_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "May10", range = "A1:B300")
+Jun_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jun10", range = "A1:B300")
+Jul_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Jul10", range = "A1:B300")
+Aug_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Aug10", range = "A1:B300")
+Sep_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Sep10", range = "A1:B300")
+Oct_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Oct10", range = "A1:B300")
+Nov_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Nov10", range = "A1:B300")
+Dec_2010 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2010.xls", sheet = "Dec10", range = "A1:B300")
 ```
 
 ```{r}
@@ -285,18 +285,18 @@ Starting to see some days where wind is higher than coal. Sweet!
 Next, 2011. These columns are pre-split for me! Wow, huzzah!
 
 ```{r}
-Jan_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jan11", range = "A1:C250")
-Feb_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Feb11", range = "A1:C250")
-Mar_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Mar11", range = "A1:C250")
-Apr_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Apr11", range = "A1:C250")
-May_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "May11", range = "A1:C250")
-Jun_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jun11", range = "A1:C250")
-Jul_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jul11", range = "A1:C250")
-Aug_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Aug11", range = "A1:C250")
-Sep_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Sep11", range = "A1:C250")
-Oct_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Oct11", range = "A1:C250")
-Nov_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Nov11", range = "A1:C250")
-Dec_2011 <- read_excel("ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Dec11", range = "A1:C250")
+Jan_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jan11", range = "A1:C250")
+Feb_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Feb11", range = "A1:C250")
+Mar_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Mar11", range = "A1:C250")
+Apr_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Apr11", range = "A1:C250")
+May_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "May11", range = "A1:C250")
+Jun_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jun11", range = "A1:C250")
+Jul_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Jul11", range = "A1:C250")
+Aug_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Aug11", range = "A1:C250")
+Sep_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Sep11", range = "A1:C250")
+Oct_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Oct11", range = "A1:C250")
+Nov_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Nov11", range = "A1:C250")
+Dec_2011 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2011.xls", sheet = "Dec11", range = "A1:C250")
 ```
 
 No custom parser necessary, as all the processing we need to do here can be handled by na.omit.
@@ -328,18 +328,18 @@ ggplot(fuelmix_2011, aes(x=Date, y=Total, color=Fuel)) +
 Ok, barring the solar/sun thing, which we'll sort out later, next we go to 2012!
 
 ```{r}
-Jan_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jan12", range = "A1:B300")
-Feb_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Feb12", range = "A1:B300")
-Mar_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Mar12", range = "A1:B300")
-Apr_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Apr12", range = "A1:B300")
-May_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "May12", range = "A1:B300")
-Jun_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jun12", range = "A1:B300")
-Jul_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jul12", range = "A1:B300")
-Aug_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Aug12", range = "A1:B300")
-Sep_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Sep12", range = "A1:B300")
-Oct_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Oct12", range = "A1:B300")
-Nov_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Nov12", range = "A1:B300")
-Dec_2012 <- read_excel("ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Dec12", range = "A1:B300")
+Jan_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jan12", range = "A1:B300")
+Feb_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Feb12", range = "A1:B300")
+Mar_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Mar12", range = "A1:B300")
+Apr_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Apr12", range = "A1:B300")
+May_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "May12", range = "A1:B300")
+Jun_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jun12", range = "A1:B300")
+Jul_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Jul12", range = "A1:B300")
+Aug_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Aug12", range = "A1:B300")
+Sep_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Sep12", range = "A1:B300")
+Oct_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Oct12", range = "A1:B300")
+Nov_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Nov12", range = "A1:B300")
+Dec_2012 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2012.xls", sheet = "Dec12", range = "A1:B300")
 ```
 
 Some annoying stuff here, where we're going to have to parse half of the year differently form the other half, due to a change in delimiter from '-' to '_'...
@@ -399,18 +399,18 @@ ggplot(fuelmix_2012, aes(x=Date, y=Total, color=Fuel)) +
 OK, now 2013.
 
 ```{r}
-Jan_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jan13", range = "A1:B300")
-Feb_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Feb13", range = "A1:B300")
-Mar_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Mar13", range = "A1:B300")
-Apr_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Apr13", range = "A1:B300")
-May_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "May13", range = "A1:B300")
-Jun_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jun13", range = "A1:B300")
-Jul_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jul13", range = "A1:B300")
-Aug_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Aug13", range = "A1:B300")
-Sep_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Sep13", range = "A1:B300")
-Oct_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Oct13", range = "A1:B300")
-Nov_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Nov13", range = "A1:B300")
-Dec_2013 <- read_excel("ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Dec13", range = "A1:B300")
+Jan_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jan13", range = "A1:B300")
+Feb_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Feb13", range = "A1:B300")
+Mar_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Mar13", range = "A1:B300")
+Apr_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Apr13", range = "A1:B300")
+May_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "May13", range = "A1:B300")
+Jun_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jun13", range = "A1:B300")
+Jul_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Jul13", range = "A1:B300")
+Aug_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Aug13", range = "A1:B300")
+Sep_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Sep13", range = "A1:B300")
+Oct_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Oct13", range = "A1:B300")
+Nov_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Nov13", range = "A1:B300")
+Dec_2013 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2013.xls", sheet = "Dec13", range = "A1:B300")
 ```
 
 parser2012b works with this data, so I won't define a new one.
@@ -437,18 +437,18 @@ ggplot(fuelmix_2013, aes(x=Date, y=Total, color=Fuel)) +
 OK, now 2014. Bless consistent formatting
 
 ```{r}
-Jan_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jan14", range = "A1:B300")
-Feb_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Feb14", range = "A1:B300")
-Mar_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Mar14", range = "A1:B300")
-Apr_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Apr14", range = "A1:B300")
-May_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "May14", range = "A1:B300")
-Jun_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jun14", range = "A1:B300")
-Jul_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jul14", range = "A1:B300")
-Aug_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Aug14", range = "A1:B300")
-Sep_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Sep14", range = "A1:B300")
-Oct_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Oct14", range = "A1:B300")
-Nov_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Nov14", range = "A1:B300")
-Dec_2014 <- read_excel("ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Dec14", range = "A1:B300")
+Jan_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jan14", range = "A1:B300")
+Feb_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Feb14", range = "A1:B300")
+Mar_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Mar14", range = "A1:B300")
+Apr_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Apr14", range = "A1:B300")
+May_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "May14", range = "A1:B300")
+Jun_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jun14", range = "A1:B300")
+Jul_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Jul14", range = "A1:B300")
+Aug_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Aug14", range = "A1:B300")
+Sep_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Sep14", range = "A1:B300")
+Oct_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Oct14", range = "A1:B300")
+Nov_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Nov14", range = "A1:B300")
+Dec_2014 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2014.xls", sheet = "Dec14", range = "A1:B300")
 ```
 
 parser2012b works with this data, so I won't define a new one.
@@ -476,18 +476,18 @@ ggplot(fuelmix_2014, aes(x=Date, y=Total, color=Fuel)) +
 OK, now 2015. Bless consistent formatting
 
 ```{r}
-Jan_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jan15", range = "A1:B300")
-Feb_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Feb15", range = "A1:B300")
-Mar_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Mar15", range = "A1:B300")
-Apr_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Apr15", range = "A1:B300")
-May_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "May15", range = "A1:B300")
-Jun_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jun15", range = "A1:B300")
-Jul_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jul15", range = "A1:B300")
-Aug_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Aug15", range = "A1:B300")
-Sep_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Sep15", range = "A1:B300")
-Oct_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Oct15", range = "A1:B300")
-Nov_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Nov15", range = "A1:B300")
-Dec_2015 <- read_excel("ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Dec15", range = "A1:B300")
+Jan_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jan15", range = "A1:B300")
+Feb_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Feb15", range = "A1:B300")
+Mar_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Mar15", range = "A1:B300")
+Apr_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Apr15", range = "A1:B300")
+May_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "May15", range = "A1:B300")
+Jun_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jun15", range = "A1:B300")
+Jul_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Jul15", range = "A1:B300")
+Aug_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Aug15", range = "A1:B300")
+Sep_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Sep15", range = "A1:B300")
+Oct_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Oct15", range = "A1:B300")
+Nov_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Nov15", range = "A1:B300")
+Dec_2015 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2015.xls", sheet = "Dec15", range = "A1:B300")
 ```
 
 parser2012b works with this data, so I won't define a new one.
@@ -514,18 +514,18 @@ ggplot(fuelmix_2015, aes(x=Date, y=Total, color=Fuel)) +
 OK, now 2016. Bless consistent formatting
 
 ```{r}
-Jan_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jan16", range = "A1:B300")
-Feb_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Feb16", range = "A1:B300")
-Mar_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Mar16", range = "A1:B300")
-Apr_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Apr16", range = "A1:B300")
-May_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "May16", range = "A1:B300")
-Jun_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jun16", range = "A1:B300")
-Jul_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jul16", range = "A1:B300")
-Aug_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Aug16", range = "A1:B300")
-Sep_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Sep16", range = "A1:B300")
-Oct_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Oct16", range = "A1:B300")
-Nov_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Nov16", range = "A1:B300")
-Dec_2016 <- read_excel("ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Dec16", range = "A1:B300")
+Jan_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jan16", range = "A1:B300")
+Feb_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Feb16", range = "A1:B300")
+Mar_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Mar16", range = "A1:B300")
+Apr_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Apr16", range = "A1:B300")
+May_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "May16", range = "A1:B300")
+Jun_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jun16", range = "A1:B300")
+Jul_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Jul16", range = "A1:B300")
+Aug_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Aug16", range = "A1:B300")
+Sep_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Sep16", range = "A1:B300")
+Oct_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Oct16", range = "A1:B300")
+Nov_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Nov16", range = "A1:B300")
+Dec_2016 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2016.xlsx", sheet = "Dec16", range = "A1:B300")
 ```
 
 parser2012b works with this data, so I won't define a new one.
@@ -552,18 +552,18 @@ ggplot(fuelmix_2016, aes(x=Date, y=Total, color=Fuel)) +
 Next, 2017. These columns are pre-split for me! Wow, huzzah! Extra settlement type column needs to be trimmed though
 
 ```{r}
-Jan_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jan", range = "A1:D300")
-Feb_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Feb", range = "A1:D300")
-Mar_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Mar", range = "A1:D300")
-Apr_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Apr", range = "A1:D300")
-May_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "May", range = "A1:D300")
-Jun_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jun", range = "A1:D300")
-Jul_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jul", range = "A1:D300")
-Aug_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Aug", range = "A1:D300")
-Sep_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Sep", range = "A1:D300")
-Oct_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Oct", range = "A1:D300")
-Nov_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Nov", range = "A1:D300")
-Dec_2017 <- read_excel("ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Dec", range = "A1:D300")
+Jan_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jan", range = "A1:D300")
+Feb_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Feb", range = "A1:D300")
+Mar_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Mar", range = "A1:D300")
+Apr_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Apr", range = "A1:D300")
+May_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "May", range = "A1:D300")
+Jun_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jun", range = "A1:D300")
+Jul_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Jul", range = "A1:D300")
+Aug_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Aug", range = "A1:D300")
+Sep_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Sep", range = "A1:D300")
+Oct_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Oct", range = "A1:D300")
+Nov_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Nov", range = "A1:D300")
+Dec_2017 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2017.xlsx", sheet = "Dec", range = "A1:D300")
 ```
 
 ```{r}
@@ -604,18 +604,18 @@ ggplot(fuelmix_2017, aes(x=Date, y=Total, color=Fuel)) +
 Next, 2018. Same as 2017.
 
 ```{r}
-Jan_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jan", range = "A1:D300")
-Feb_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Feb", range = "A1:D300")
-Mar_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Mar", range = "A1:D300")
-Apr_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Apr", range = "A1:D300")
-May_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "May", range = "A1:D300")
-Jun_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jun", range = "A1:D300")
-Jul_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jul", range = "A1:D300")
-Aug_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Aug", range = "A1:D300")
-Sep_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Sep", range = "A1:D300")
-Oct_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Oct", range = "A1:D300")
-Nov_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Nov", range = "A1:D300")
-Dec_2018 <- read_excel("ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Dec", range = "A1:D300")
+Jan_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jan", range = "A1:D300")
+Feb_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Feb", range = "A1:D300")
+Mar_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Mar", range = "A1:D300")
+Apr_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Apr", range = "A1:D300")
+May_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "May", range = "A1:D300")
+Jun_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jun", range = "A1:D300")
+Jul_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Jul", range = "A1:D300")
+Aug_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Aug", range = "A1:D300")
+Sep_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Sep", range = "A1:D300")
+Oct_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Oct", range = "A1:D300")
+Nov_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Nov", range = "A1:D300")
+Dec_2018 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2018.xlsx", sheet = "Dec", range = "A1:D300")
 ```
 
 ```{r}
@@ -645,18 +645,18 @@ ggplot(fuelmix_2018, aes(x=Date, y=Total, color=Fuel)) +
 Next, 2019. Same as 2017, 2018. Hurray for consistency.
 
 ```{r}
-Jan_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jan", range = "A1:D300")
-Feb_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Feb", range = "A1:D300")
-Mar_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Mar", range = "A1:D300")
-Apr_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Apr", range = "A1:D300")
-May_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "May", range = "A1:D300")
-Jun_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jun", range = "A1:D300")
-Jul_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jul", range = "A1:D300")
-Aug_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Aug", range = "A1:D300")
-Sep_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Sep", range = "A1:D300")
-Oct_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Oct", range = "A1:D300")
-Nov_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Nov", range = "A1:D300")
-Dec_2019 <- read_excel("ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Dec", range = "A1:D300")
+Jan_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jan", range = "A1:D300")
+Feb_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Feb", range = "A1:D300")
+Mar_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Mar", range = "A1:D300")
+Apr_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Apr", range = "A1:D300")
+May_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "May", range = "A1:D300")
+Jun_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jun", range = "A1:D300")
+Jul_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Jul", range = "A1:D300")
+Aug_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Aug", range = "A1:D300")
+Sep_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Sep", range = "A1:D300")
+Oct_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Oct", range = "A1:D300")
+Nov_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Nov", range = "A1:D300")
+Dec_2019 <- read_excel("data/ercot_fuelmixreport/IntGenByFuel2019.xlsx", sheet = "Dec", range = "A1:D300")
 ```
 
 ```{r}
@@ -686,7 +686,7 @@ ggplot(fuelmix_2019, aes(x=Date, y=Total, color=Fuel)) +
 Here, we're going to bring in monthly gas prices in Texas (values in $/1000 ft^3), and spline them for smooth daily data.
 
 ```{r}
-gas_price <- read_csv("Texas_Natural_Gas_Industrial_Price.csv", col_types = cols(Month = col_date(format = "%b %Y")), skip = 4)
+gas_price <- read_csv("data/Texas_Natural_Gas_Industrial_Price.csv", col_types = cols(Month = col_date(format = "%b %Y")), skip = 4)
 
 gas_price$Date <- gas_price$Month 
 gas_price$Gas_Price <- gas_price$`Texas Natural Gas Industrial Price  Dollars per Thousand Cubic Feet`
@@ -893,15 +893,15 @@ lin.mod.winter <- lm(Coal ~ Gas + Wind + Gas_Price, data = ercot_wide[ercot_wide
 print("Winter Model Summary")
 tab_model(lin.mod.winter)
 
-lin.mod.spring <- lm(Coal ~ Gas + Wind, data = ercot_wide[ercot_wide$Season=="spring",])
+lin.mod.spring <- lm(Coal ~ Gas + Wind + Gas_Price, data = ercot_wide[ercot_wide$Season=="spring",])
 print("Spring Model Summary")
 tab_model(lin.mod.spring)
 
-lin.mod.summer <- lm(Coal ~ Gas + Wind, data = ercot_wide[ercot_wide$Season=="summer",])
+lin.mod.summer <- lm(Coal ~ Gas + Wind + Gas_Price, data = ercot_wide[ercot_wide$Season=="summer",])
 print("Summer Model Summary")
 tab_model(lin.mod.summer)
 
-lin.mod.fall <- lm(Coal ~ Gas + Wind, data = ercot_wide[ercot_wide$Season=="fall",])
+lin.mod.fall <- lm(Coal ~ Gas + Wind + Gas_Price, data = ercot_wide[ercot_wide$Season=="fall",])
 print("Fall Model Summary")
 tab_model(lin.mod.winter, lin.mod.spring, lin.mod.summer, lin.mod.fall)
 
