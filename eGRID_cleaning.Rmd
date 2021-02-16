@@ -25,7 +25,7 @@ The first couple chunks will be parsing out data from the 2000 release.
 
 ```{r }
 #This pulls in all the eGRID data from 2000. Separate chunk because it takes a minute
-eGRID2000_plant <- read_excel("eGRID_files/eGRID2000_plant.xls", 
+eGRID2000_plant <- read_excel("data/eGRID_files/eGRID2000_plant.xls", 
      sheet = "EGRDPLNT00", col_types = c("numeric", 
          "text", "text", "text", "numeric", 
          "text", "numeric", "text", "text", 
@@ -120,7 +120,7 @@ Let's move on to the next one, from 2004.
 
 ```{r}
 #As before, one big table
-eGRID2004_plant <- read_excel("eGRID_files/eGRID2004_plant.xls", sheet = "EGRDPLNT04", skip = 4)
+eGRID2004_plant <- read_excel("data/eGRID_files/eGRID2004_plant.xls", sheet = "EGRDPLNT04", skip = 4)
 ```
 
 ```{r}
@@ -165,7 +165,7 @@ Next, 2005. Hopefully the format starts to even out...
 ##2005
 
 ```{r}
-eGRID2005_plant <- read_excel("eGRID_files/eGRID2005_plant.xls", sheet = "PLNT05", skip = 4)
+eGRID2005_plant <- read_excel("data/eGRID_files/eGRID2005_plant.xls", sheet = "PLNT05", skip = 4)
 
 ```
 
@@ -212,7 +212,7 @@ Next, 2007.
 ##2007
 
 ```{r}
-eGRID2007_plant <- read_excel("eGRID_files/eGRID2007_plant.xls", sheet = "PLNT07", skip = 4)
+eGRID2007_plant <- read_excel("data/eGRID_files/eGRID2007_plant.xls", sheet = "PLNT07", skip = 4)
 
 ```
 
@@ -259,7 +259,7 @@ Now, 2009:
 ##2009
 
 ```{r}
-eGRID2009_plant <- read_excel("eGRID_files/eGRID2009_data.xls", sheet = "PLNT09", skip = 4)
+eGRID2009_plant <- read_excel("data/eGRID_files/eGRID2009_data.xls", sheet = "PLNT09", skip = 4)
 
 ```
 
@@ -307,7 +307,7 @@ Now, 2010:
 ##2010
 
 ```{r}
-eGRID2010_plant <- read_excel("eGRID_files/eGRID2010_Data.xls", sheet = "PLNT10", skip = 4)
+eGRID2010_plant <- read_excel("data/eGRID_files/eGRID2010_Data.xls", sheet = "PLNT10", skip = 4)
 
 ```
 
@@ -352,7 +352,7 @@ Next, 2012:
 ##2012
 
 ```{r}
-eGRID2012_plant <- read_excel("eGRID_files/eGRID2012_Data.xlsx", sheet = "PLNT12", skip = 4)
+eGRID2012_plant <- read_excel("data/eGRID_files/eGRID2012_Data.xlsx", sheet = "PLNT12", skip = 4)
 
 ```
 
@@ -397,7 +397,7 @@ Sweet. On to 2014:
 ##2014
 
 ```{r}
-eGRID2014_plant <- read_excel("eGRID_files/eGRID2014_Data_v2.xlsx", sheet = "PLNT14", skip = 1)
+eGRID2014_plant <- read_excel("data/eGRID_files/eGRID2014_Data_v2.xlsx", sheet = "PLNT14", skip = 1)
 
 ```
 
@@ -444,7 +444,7 @@ Next, 2016:
 ##2016
 
 ```{r}
-eGRID2016_plant <- read_excel("eGRID_files/eGRID2016_data.xlsx", sheet = "PLNT16", skip = 1)
+eGRID2016_plant <- read_excel("data/eGRID_files/eGRID2016_data.xlsx", sheet = "PLNT16", skip = 1)
 
 ```
 
@@ -490,7 +490,7 @@ Nice, that's all the historic data back to 2000. Our next file ill be the most r
 ##2018
 
 ```{r}
-eGRID2018_plant <- read_excel("eGRID_files/eGRID2018_data.xlsx", sheet = "PLNT18", skip = 1)
+eGRID2018_plant <- read_excel("data/eGRID_files/eGRID2018_data.xlsx", sheet = "PLNT18", skip = 1)
 
 ```
 
@@ -583,7 +583,7 @@ table(eGRID_ercot$fuel_type)
 ```
 
 ```{r}
-write.csv(eGRID_ercot,"eGRID_ercot.csv")
+write.csv(eGRID_ercot,"data/eGRID_files/eGRID_ercot.csv")
 ```
 
 ```{r}

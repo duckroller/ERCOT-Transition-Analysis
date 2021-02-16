@@ -1028,7 +1028,7 @@ tab_model(lin.mod.norm.winter)
 
 lin.mod.norm.spring <- lm(Coal ~ Gas + Wind + Gas_Price, data = norm1[norm1$Season=="spring",])
 print("Spring Model Summary")
-tab_model(lin.mod.norm.spring)
+tab_model(lin.mod.norm.spring) 
 
 lin.mod.norm.summer <- lm(Coal ~ Gas + Wind + Gas_Price, data = norm1[norm1$Season=="summer",])
 print("Summer Model Summary")
@@ -1047,5 +1047,17 @@ tab_model(
   transform = NULL
 )
 ```
+
+```{r}
+write.csv(ercot_tall,"data/ercot_fuelmixreport/fuel_mix_report_clean_tall.csv")
+write.csv(ercot_wide,"data/ercot_fuelmixreport/fuel_mix_report_clean_wide.csv")
+
+
+```
+
+
+
+
+
 
 

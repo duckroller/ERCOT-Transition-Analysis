@@ -364,6 +364,10 @@ library(psych)
 
 describe(spot_prices_DAM)
 
-plot(spot_prices_DAM$`Settlement Point Price`)
+plot(spot_prices_DAM$`Settlement Point Price`[spot_prices_DAM$`Settlement Point`=="HB_HUBAVG"])
+```
+
+```{r}
+write.csv(spot_prices_DAM,"data/ERCOT_prices_historic/spot_prices_DAM.csv")
 ```
 

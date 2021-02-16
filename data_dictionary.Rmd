@@ -1,0 +1,26 @@
+---
+title: "Data Dictionary"
+output: html_notebook
+---
+
+This notebook is for making up a data dictionary.
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+library(readr)
+```
+
+```{r}
+annual_plant_level_data <- read_csv("data/Cleaned Data/eGRID_ercot.csv")
+daily_fuel_mix_report <- read_csv("data/Cleaned Data/fuel_mix_report_clean_wide.csv")
+hourly_spot_prices_DAM <- read_csv("data/Cleaned Data/spot_prices_DAM.csv")
+annual_wind_turbine_data <- read_csv("data/Cleaned Data/txwtdb.csv")
+
+```
+```{r}
+hourly_hubavg_spot_price_DAM <- hourly_spot_prices_DAM[hourly_spot_prices_DAM$`Settlement Point` == "HB_HUBAVG",]
+```
+
