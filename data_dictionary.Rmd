@@ -11,16 +11,66 @@ rm(list=ls())
 
 ```{r}
 library(readr)
+library(kableExtra)
+library(zoo)
 ```
 
 ```{r}
 annual_plant_level_data <- read_csv("data/Cleaned Data/eGRID_ercot.csv")
 daily_fuel_mix_report <- read_csv("data/Cleaned Data/fuel_mix_report_clean_wide.csv")
+daily_fuel_mix_report[is.na(daily_fuel_mix_report)] <- 0
 hourly_spot_prices_DAM <- read_csv("data/Cleaned Data/spot_prices_DAM.csv")
 annual_wind_turbine_data <- read_csv("data/Cleaned Data/txwtdb.csv")
 
 ```
 ```{r}
 hourly_hubavg_spot_price_DAM <- hourly_spot_prices_DAM[hourly_spot_prices_DAM$`Settlement Point` == "HB_HUBAVG",]
+
+hourly_hubavg_spot_price_DAM$date_time <- paste(hourly_hubavg_spot_price_DAM$`Delivery Date`, hourly_hubavg_spot_price_DAM$`Hour Ending`)
+```
+
+```{r}
+#kable(head(annual_plant_level_data, 10), format = "html", caption = "Portion of dataset")
+```
+
+Going to use the zoo package to make these time series a little easier to work with...
+
+
+```{r}
+#hourly_hubavg_spot_price_DAM$date_time <- as.Date(hourly_hubavg_spot_price_DAM$date_time,"%m/%d/%Y ")
+
+
+hourly_hubavg_spot_price_DAM <- data.frame(date = hourly_hubavg_spot_price_DAM$date_time, DAM_settlement_price = hourly_hubavg_spot_price_DAM$`Settlement Point Price`)
+
+write.csv(hourly_hubavg_spot_price_DAM,"data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv")
+
+#hrly_txt <- as.character(hourly_hubavg_spot_price_DAM)
+
+stat <- function(x) c(min_spot_price = min(x), max_spot_price = max(x), mean_spot_price = mean(x))
+
+spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%m/%d/%Y", aggregate = stat)
+```
+
+
+```{r}
+
+fuel_mix_zoo <- read.zoo(file="data/Cleaned Data/fuel_mix_report_clean_wide.csv", header = TRUE, sep=",", format = "%Y-%m-%d")
+
+```
+
+
+```{r}
+
+plant_level_zoo <- read.zoo(file="data/Cleaned Data/eGRID_ercot.csv", header = TRUE, sep=",", format = "%Y")
+
+```
+
+```{r}
+turbine_zoo <- read.zoo(file="data/Cleaned Data/txwtdb.csv", header = TRUE, sep=",", format = "%Y")
+```
+
+
+```{r}
+turbine_zoo <- read.zoo(annual_wind_turbine_data, format="%Y")
 ```
 
