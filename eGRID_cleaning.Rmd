@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readxl)
+library(data.table)
 
 #clean workspace
 rm(list = ls())
@@ -578,16 +579,41 @@ table(eGRID_ercot$coastal)
 
 table(eGRID_ercot$fuel_type)
 
-#this is less than ideal - I'd love to squish these into better names. WND is wind, NG is natural gas, SUN is solar, LIG is lignite, SUB is subbittuminous coal, etc... Gonna have to comb through the support docs included to know what's what here
 
 ```
 
 ```{r}
-write.csv(eGRID_ercot,"data/eGRID_files/eGRID_ercot.csv")
+rm(list=c("eGRID2000","eGRID2004","eGRID2005","eGRID2007","eGRID2009","eGRID2010","eGRID2012","eGRID2014","eGRID2016","eGRID2018"))
+
+write.csv(eGRID_ercot,"data/eGRID_files/eGRID_ercot.csv", row.names = FALSE)
 ```
+
+Now let's aggregate the data to see the annual stats for each variety of generation...
+
+```{r}
+eGRID_aggregation <- data.frame(year = unique(eGRID_ercot$year))
+
+stat <- function(x) c(min_val = min(x), max_val = max(x), mean_val = mean(x), sum_val = sum(x))
+
+nameplate_agg <- do.call(data.frame, aggregate(nameplate_capacity ~ fuel_type + year, data = eGRID_ercot, FUN=stat))
+capfac_agg <- do.call(data.frame, aggregate(capacity_factor ~ fuel_type + year, data = eGRID_ercot, FUN=stat))
+netgen_agg <- do.call(data.frame, aggregate(annual_net_generation ~ fuel_type + year, data = eGRID_ercot, FUN=stat))
+
+
+```
+
+All together now...
 
 ```{r}
 
+eGRID_wide_aggregate <- dcast(setDT(nameplate_agg), year ~ fuel_type, value.var = c("nameplate_capacity.min_val","nameplate_capacity.max_val","nameplate_capacity.mean_val","nameplate_capacity.sum_val"), sep=".") 
+
+eGRID_wide_aggregate[is.na(eGRID_wide_aggregate)] <- 0
+
+```
+
+```{r}
+write.csv(eGRID_wide_aggregate,"data/Cleaned Data/eGRID_wide_aggregate.csv", row.names = FALSE)
 
 ```
 
