@@ -37,18 +37,10 @@ Going to use the zoo package to make these time series a little easier to work w
 
 
 ```{r}
-#hourly_hubavg_spot_price_DAM$date_time <- as.Date(hourly_hubavg_spot_price_DAM$date_time,"%m/%d/%Y ")
-
-
-hourly_hubavg_spot_price_DAM <- data.frame(date = hourly_hubavg_spot_price_DAM$date_time, DAM_settlement_price = hourly_hubavg_spot_price_DAM$`Settlement Point Price`)
-
-write.csv(hourly_hubavg_spot_price_DAM,"data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv")
-
-#hrly_txt <- as.character(hourly_hubavg_spot_price_DAM)
 
 stat <- function(x) c(min_spot_price = min(x), max_spot_price = max(x), mean_spot_price = mean(x))
 
-spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%m/%d/%Y", aggregate = stat)
+spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%Y-%m-%d", aggregate = stat)
 ```
 
 
@@ -61,16 +53,26 @@ fuel_mix_zoo <- read.zoo(file="data/Cleaned Data/fuel_mix_report_clean_wide.csv"
 
 ```{r}
 
-plant_level_zoo <- read.zoo(file="data/Cleaned Data/eGRID_ercot.csv", header = TRUE, sep=",", format = "%Y")
+plant_level_zoo <- read.zoo(file="data/Cleaned Data/eGRID_wide_aggregate.csv", header = TRUE, sep=",", format = "%Y")
 
 ```
 
 ```{r}
-turbine_zoo <- read.zoo(file="data/Cleaned Data/txwtdb.csv", header = TRUE, sep=",", format = "%Y")
+#turbine_zoo <- read.zoo(file="data/Cleaned Data/txwtdb.csv", header = TRUE, sep=",", format = "%Y")
 ```
 
 
 ```{r}
-turbine_zoo <- read.zoo(annual_wind_turbine_data, format="%Y")
+#annual_wind_turbine_data <-  annual_wind_turbine_data[!is.na(annual_wind_turbine_data$p_year),]
+
+#turbine_zoo <- read.zoo(annual_wind_turbine_data, format="%Y")
+```
+
+```{r}
+naive_merge <- merge(fuel_mix_zoo, plant_level_zoo, spot_price_zoo)
+```
+
+```{r}
+write.zoo(naive_merge, file="data/Cleaned Data/cleaned_timeseries_data.csv", index.name = "Date")
 ```
 
