@@ -371,3 +371,40 @@ plot(spot_prices_DAM$`Settlement Point Price`[spot_prices_DAM$`Settlement Point`
 write.csv(spot_prices_DAM,"data/ERCOT_prices_historic/spot_prices_DAM.csv")
 ```
 
+I want to save daily aggregates rather than hourly data, so I'll clean it here.
+
+```{r}
+hourly_hubavg_spot_price_DAM <- spot_prices_DAM[spot_prices_DAM$`Settlement Point` == "HB_HUBAVG",]
+
+hourly_hubavg_spot_price_DAM$date_time <- paste(hourly_hubavg_spot_price_DAM$`Delivery Date`, hourly_hubavg_spot_price_DAM$`Hour Ending`)
+```
+
+
+Going to use the zoo package to make these time series a little easier to work with...
+
+```{r}
+library(zoo)
+```
+
+
+```{r}
+hourly_hubavg_spot_price_DAM$date_time <- as.Date(hourly_hubavg_spot_price_DAM$date_time,"%m/%d/%Y ")
+
+
+hourly_hubavg_spot_price_DAM <- data.frame(date = hourly_hubavg_spot_price_DAM$date_time, DAM_settlement_price = hourly_hubavg_spot_price_DAM$`Settlement Point Price`)
+
+write.csv(hourly_hubavg_spot_price_DAM,"data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", row.names=FALSE)
+
+#hrly_txt <- as.character(hourly_hubavg_spot_price_DAM)
+```
+
+```{r}
+stat <- function(x) c(min_spot_price = min(x), max_spot_price = max(x), mean_spot_price = mean(x))
+
+spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%Y-%m-%d", aggregate = stat)
+```
+
+```{r}
+write.zoo(spot_price_zoo, file = 'data/Cleaned Data/daily_spot_price_agg.csv', sep=",")
+```
+

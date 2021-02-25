@@ -42,3 +42,4 @@ vignettes/*.pdf
 #don't upload big data files
 data/*
 misc_stuff/*
+daily_spot_price_agg.csv
