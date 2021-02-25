@@ -606,7 +606,13 @@ All together now...
 
 ```{r}
 
-eGRID_wide_aggregate <- dcast(setDT(nameplate_agg), year ~ fuel_type, value.var = c("nameplate_capacity.min_val","nameplate_capacity.max_val","nameplate_capacity.mean_val","nameplate_capacity.sum_val"), sep=".") 
+nameplate_wide_aggregate <- dcast(setDT(nameplate_agg), year ~ fuel_type, value.var = c("nameplate_capacity.min_val","nameplate_capacity.max_val","nameplate_capacity.mean_val","nameplate_capacity.sum_val"), sep=".")
+capfac_wide_aggregate <- dcast(setDT(capfac_agg), year ~ fuel_type, value.var = c("capacity_factor.min_val","capacity_factor.max_val","capacity_factor.mean_val","capacity_factor.sum_val"), sep=".")
+netgen_wide_aggregate <- dcast(setDT(netgen_agg), year ~ fuel_type, value.var = c("annual_net_generation.min_val","annual_net_generation.max_val","annual_net_generation.mean_val","annual_net_generation.sum_val"), sep=".")
+
+eGRID_wide_aggregate <- merge(nameplate_wide_aggregate,capfac_wide_aggregate, by="year")
+
+eGRID_wide_aggregate <- merge(eGRID_wide_aggregate, netgen_wide_aggregate, by="year")
 
 eGRID_wide_aggregate[is.na(eGRID_wide_aggregate)] <- 0
 
