@@ -1,0 +1,60 @@
+---
+title: "variable_selection"
+author: "Eli Ramthun"
+date: "4/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#---------------#
+# Run Parameters 
+#---------------#
+
+set.seed(1)
+
+#---------------#
+# Libraries
+#---------------#
+
+library(MASS)
+library(leaps)
+```
+
+```{r}
+#---------------#
+# Load Data
+#---------------#
+
+df <- read.csv(file="data/Cleaned Data/cleaned_timeseries_data_zeroes.csv")
+```
+
+```{r}
+
+# Forward stepsise selection
+mod.fwd <- regsubsets(Coal ~ ., data = df, nvmax = 6, method = "forward") #Models with upto 10 predictors
+mod.fwd.sum <- summary(mod.fwd) 
+#mod.fwd.sum #Notice which variables are selected in 1,2,3....19 variable models respectively and in what order
+
+# Backward stepwise selection
+mod.bck <- regsubsets(Coal ~ ., data = df, nvmax = 6, method = "backward")#Models with upto 8 predictors
+mod.bck.sum <- summary(mod.bck) 
+#mod.bck.sum #Notice which variables are selected in 19,18,17...1 variable models respectively and in what order
+
+plot(mod.fwd, scale = "bic") #Notice the variables identified in the best model
+plot(mod.bck, scale = "bic") #Notice the variables identified in the best model - are they the same as fwd selection?
+```
+
+
+```{r}
+fwd_choices <- mod.fwd.sum$which
+fwds <- colnames(fwd_choices[,which(fwd_choices[10,]=="TRUE")])[2:7]
+
+bck_choices <- mod.bck.sum$which
+bcks <- colnames(bck_choices[,which(bck_choices[10,]=="TRUE")])[2:7]
+```
+
+Forward stepwise selection chose `r fwds` as its predictors; backword stepwise selection chose `r bcks` as its predictors.
