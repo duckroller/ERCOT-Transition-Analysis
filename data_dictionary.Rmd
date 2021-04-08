@@ -24,9 +24,9 @@ annual_wind_turbine_data <- read_csv("data/Cleaned Data/txwtdb.csv")
 
 ```
 ```{r}
-hourly_hubavg_spot_price_DAM <- hourly_spot_prices_DAM[hourly_spot_prices_DAM$`Settlement Point` == "HB_HUBAVG",]
+#hourly_zonal_spot_price_DAM <- hourly_spot_prices_DAM[hourly_spot_prices_DAM$`Settlement Point` == "HB_HUBAVG",]
 
-hourly_hubavg_spot_price_DAM$date_time <- paste(hourly_hubavg_spot_price_DAM$`Delivery Date`, hourly_hubavg_spot_price_DAM$`Hour Ending`)
+#hourly_hubavg_spot_price_DAM$date_time <- paste(hourly_hubavg_spot_price_DAM$`Delivery Date`, hourly_hubavg_spot_price_DAM$`Hour Ending`)
 ```
 
 ```{r}
@@ -37,10 +37,11 @@ Going to use the zoo package to make these time series a little easier to work w
 
 
 ```{r}
+#this is now done in price_cleaning.rmd
 
-stat <- function(x) c(min_spot_price = min(x), max_spot_price = max(x), mean_spot_price = mean(x))
+#stat <- function(x) c(min_spot_price = min(x), max_spot_price = max(x), mean_spot_price = mean(x))
 
-spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%Y-%m-%d", aggregate = stat)
+#spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_zonal_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%Y-%m-%d", aggregate = stat)
 ```
 
 
@@ -57,6 +58,11 @@ plant_level_zoo <- read.zoo(file="data/Cleaned Data/eGRID_wide_aggregate.csv", h
 
 ```
 
+
+```{r}
+zonal_spot_price_zoo <- read.zoo(file = "data/Cleaned Data/daily_dam_zonal_spot_price_agg.csv", header = TRUE, sep=",", format = "%Y-%m-%d")
+```
+
 ```{r}
 #turbine_zoo <- read.zoo(file="data/Cleaned Data/txwtdb.csv", header = TRUE, sep=",", format = "%Y")
 ```
@@ -69,10 +75,96 @@ plant_level_zoo <- read.zoo(file="data/Cleaned Data/eGRID_wide_aggregate.csv", h
 ```
 
 ```{r}
-naive_merge <- merge(fuel_mix_zoo, plant_level_zoo, spot_price_zoo)
+dates <- seq(from = min(index(fuel_mix_zoo)), to = max(index(fuel_mix_zoo)), by = 1)
+empty <- zoo(, dates)
+
+filled.fuel_mix_zoo <- merge(fuel_mix_zoo, empty, all = TRUE)
+
+filled.fuel_mix_zoo <- na.locf(merge(fuel_mix_zoo, empty, all = TRUE))
+
+dates <- seq(from = min(index(zonal_spot_price_zoo)), to = max(index(zonal_spot_price_zoo)), by = 1)
+empty <- zoo(, dates)
+
+filled.spot_price_zoo <- merge(zonal_spot_price_zoo, empty, all = TRUE)
+
+filled.spot_price_zoo <- na.locf(merge(zonal_spot_price_zoo, empty, all = TRUE))
 ```
 
 ```{r}
-write.zoo(naive_merge, file="data/Cleaned Data/cleaned_timeseries_data.csv", index.name = "Date")
+#naive_daily_merge <- merge(fuel_mix_zoo, spot_price_zoo, all=TRUE)
+
+filled_daily_merge <- merge(filled.fuel_mix_zoo, filled.spot_price_zoo, all=TRUE)
+
+#write.zoo(naive_merge, file="data/Cleaned Data/cleaned_timeseries_data_naive.csv", index.name = "Date", sep=",")
+
+#naive_merge <- read.zoo(file="data/Cleaned Data/cleaned_timeseries_data_naive.csv", header = TRUE, sep=",", format = "%Y-%m-%d")
+
+# all but b
+#filled_daily_merge <- filled_daily_merge[, colnames(filled_daily_merge) != "Season"]
+
+
+describe(filled_daily_merge)
+
+#splined_merge <- na.spline(naive_daily_merge)
+
+merge_fill0 <- na.fill(filled_daily_merge,0)
+
+```
+
+```{r}
+write.zoo(merge_fill0, file="data/Cleaned Data/cleaned_timeseries_data_zeroes.csv", index.name = "Date", sep=",")
+
+write.zoo(splined_merge, file="data/Cleaned Data/cleaned_timeseries_data_splined.csv", index.name = "Date", sep=",")
+
+write.zoo(filled_daily_merge, file="data/Cleaned Data/cleaned_timeseries_data_filled.csv", index.name = "Date", sep=",")
+```
+
+
+```{r}
+autoplot.zoo(filled_daily_merge)
+```
+
+```{r}
+describe(merge_fill0)
+```
+
+
+```{r}
+library(ggplot2)
+library(GGally)
+
+ggpairs(merge_fill0)    
+```
+```{r}
+cleaned_timeseries_data_zeroes <- read_csv("~/EER Thesis/ERCOT Transition Analysis/data/Cleaned Data/cleaned_timeseries_data_zeroes.csv", 
+    col_types = cols(Date = col_date(format = "%Y-%m-%d")))
+```
+
+```{r}
+#ggpairs(cleaned_timeseries_data_zeroes,lower = list(continuous = "smooth"))
+
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999", "#000000")
+
+
+ggpairs(cleaned_timeseries_data_zeroes, mapping=ggplot2::aes(colour = as.factor(Season), alpha=0.75),
+              lower=list(continuous="smooth"),
+              #upper=list(continuous="blank"),
+              axisLabels="none", switch="both") +
+              theme_bw() +
+              scale_color_manual(values=cbPalette) +
+              scale_fill_manual(values=cbPalette)
+
+ggsave("daily_correlogram.png", path="misc_stuff/", device="png",width=14, height=14)
+```
+
+```{r}
+ggcorr(cleaned_timeseries_data_zeroes)
+
+ggsave("daily_correlation_matrix.png", path="misc_stuff/", device = "png")
+
+```
+
+```{r}
+
 ```
 
