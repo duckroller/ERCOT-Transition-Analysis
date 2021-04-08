@@ -374,9 +374,13 @@ write.csv(spot_prices_DAM,"data/ERCOT_prices_historic/spot_prices_DAM.csv")
 I want to save daily aggregates rather than hourly data, so I'll clean it here.
 
 ```{r}
-hourly_hubavg_spot_price_DAM <- spot_prices_DAM[spot_prices_DAM$`Settlement Point` == "HB_HUBAVG",]
+#hourly_zonal_spot_price_DAM <- spot_prices_DAM[spot_prices_DAM$`Settlement Point` == ("LZ_AEN" || "LZ_CPS" || "LZ_HOUSTON" || "LZ_LCRA" || "LZ_NORTH" || "LZ_RAYBN" || "LZ_SOUTH" || "LZ_WEST"),]
 
-hourly_hubavg_spot_price_DAM$date_time <- paste(hourly_hubavg_spot_price_DAM$`Delivery Date`, hourly_hubavg_spot_price_DAM$`Hour Ending`)
+hourly_zonal_spot_price_DAM <- spot_prices_DAM[ which(spot_prices_DAM$`Settlement Point` ==
+"LZ_AEN" | spot_prices_DAM$`Settlement Point` == "LZ_CPS" | spot_prices_DAM$`Settlement Point` == "LZ_HOUSTON" | spot_prices_DAM$`Settlement Point` == "LZ_LCRA" | spot_prices_DAM$`Settlement Point` == "LZ_NORTH" | spot_prices_DAM$`Settlement Point` == "LZ_RAYBN" | spot_prices_DAM$`Settlement Point` == "LZ_SOUTH" | spot_prices_DAM$`Settlement Point` == "LZ_WEST"), ]
+
+
+hourly_zonal_spot_price_DAM$date_time <- paste(hourly_zonal_spot_price_DAM$`Delivery Date`, hourly_zonal_spot_price_DAM$`Hour Ending`)
 ```
 
 
@@ -388,12 +392,12 @@ library(zoo)
 
 
 ```{r}
-hourly_hubavg_spot_price_DAM$date_time <- as.Date(hourly_hubavg_spot_price_DAM$date_time,"%m/%d/%Y ")
+hourly_zonal_spot_price_DAM$date_time <- as.Date(hourly_zonal_spot_price_DAM$date_time,"%m/%d/%Y ")
 
 
-hourly_hubavg_spot_price_DAM <- data.frame(date = hourly_hubavg_spot_price_DAM$date_time, DAM_settlement_price = hourly_hubavg_spot_price_DAM$`Settlement Point Price`)
+hourly_zonal_spot_price_DAM <- data.frame(date = hourly_zonal_spot_price_DAM$date_time, DAM_settlement_price = hourly_zonal_spot_price_DAM$`Settlement Point Price`)
 
-write.csv(hourly_hubavg_spot_price_DAM,"data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", row.names=FALSE)
+write.csv(hourly_zonal_spot_price_DAM,"data/Cleaned Data/hourly_zonal_spot_price_DAM.csv", row.names=FALSE)
 
 #hrly_txt <- as.character(hourly_hubavg_spot_price_DAM)
 ```
@@ -402,9 +406,368 @@ write.csv(hourly_hubavg_spot_price_DAM,"data/Cleaned Data/hourly_hubavg_spot_pri
 stat <- function(x) c(min_spot_price = min(x), max_spot_price = max(x), mean_spot_price = mean(x))
 
 spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_hubavg_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%Y-%m-%d", aggregate = stat)
+
+zonal_spot_price_zoo <- read.zoo(file = "data/Cleaned Data/hourly_zonal_spot_price_DAM.csv", header = TRUE, sep = ",", format = "%Y-%m-%d", aggregate = stat)
 ```
 
 ```{r}
-write.zoo(spot_price_zoo, file = 'data/Cleaned Data/daily_spot_price_agg.csv', sep=",")
+write.zoo(spot_price_zoo, file = 'data/Cleaned Data/daily_dam_hubavg_spot_price_agg.csv', sep=",")
+
+write.zoo(zonal_spot_price_zoo, file = 'data/Cleaned Data/daily_dam_zonal_spot_price_agg.csv', sep=",")
+```
+
+Ok let's do it for real time prices...
+
+```{r}
+# Import 2010 prices. Only December figures are available; I figure they only keep ten years of data available...
+spot_prices_RTM_dec_2010 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2010.xlsx")
+```
+
+
+```{r}
+# Import 2011 prices
+spot_prices_RTM_jan_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Jan_1")
+spot_prices_RTM_feb_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Feb_2")
+spot_prices_RTM_mar_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Mar_3")
+spot_prices_RTM_apr_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Apr_4")
+spot_prices_RTM_may_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "May_5")
+spot_prices_RTM_jun_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Jun_6")
+spot_prices_RTM_jul_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Jul_7")
+spot_prices_RTM_aug_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Aug_8")
+spot_prices_RTM_sep_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Sep_9")
+spot_prices_RTM_oct_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Oct_10")
+spot_prices_RTM_nov_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Nov_11")
+spot_prices_RTM_dec_2011 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2011.xlsx", sheet = "Dec_12")
+
+```
+
+```{r}
+# Import 2012 prices
+spot_prices_RTM_jan_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Jan_1")
+spot_prices_RTM_feb_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Feb_2")
+spot_prices_RTM_mar_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Mar_3")
+spot_prices_RTM_mar_2012_1 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Mar_4")
+spot_prices_RTM_apr_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Apr_5")
+
+spot_prices_RTM_may_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "May_6")
+spot_prices_RTM_may_2012_1 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "May_7")
+
+spot_prices_RTM_jun_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Jun_8")
+
+spot_prices_RTM_jul_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Jul_9")
+spot_prices_RTM_jul_2012_1 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Jul_10")
+
+spot_prices_RTM_aug_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Aug_11")
+spot_prices_RTM_aug_2012_1 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Aug_12")
+
+spot_prices_RTM_sep_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Sep_13")
+
+spot_prices_RTM_oct_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Oct_14")
+spot_prices_RTM_oct_2012_1 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Oct_15")
+
+spot_prices_RTM_nov_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Nov_16")
+
+spot_prices_RTM_dec_2012 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Dec_17")
+spot_prices_RTM_dec_2012_1 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2012.xlsx", sheet = "Dec_18")
+
+```
+
+```{r}
+# Import 2013 prices
+spot_prices_RTM_jan_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Jan_1")
+spot_prices_RTM_feb_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Feb_2")
+spot_prices_RTM_mar_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Mar_3")
+spot_prices_RTM_apr_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Apr_4")
+spot_prices_RTM_may_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "May_5")
+spot_prices_RTM_jun_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Jun_6")
+spot_prices_RTM_jul_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Jul_7")
+spot_prices_RTM_aug_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Aug_8")
+spot_prices_RTM_sep_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Sep_9")
+spot_prices_RTM_oct_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Oct_10")
+spot_prices_RTM_nov_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Nov_11")
+spot_prices_RTM_dec_2013 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2013.xlsx", sheet = "Dec_12")
+```
+
+```{r}
+# Import 2014 prices
+spot_prices_RTM_jan_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Jan_1")
+spot_prices_RTM_feb_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Feb_2")
+spot_prices_RTM_mar_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Mar_3")
+spot_prices_RTM_apr_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Apr_4")
+spot_prices_RTM_may_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "May_5")
+spot_prices_RTM_jun_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Jun_6")
+spot_prices_RTM_jul_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Jul_7")
+spot_prices_RTM_aug_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Aug_8")
+spot_prices_RTM_sep_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Sep_9")
+spot_prices_RTM_oct_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Oct_10")
+spot_prices_RTM_nov_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Nov_11")
+spot_prices_RTM_dec_2014 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2014.xlsx", sheet = "Dec_12")
+```
+
+```{r}
+# Import 2015 prices
+spot_prices_RTM_jan_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Jan_1")
+spot_prices_RTM_feb_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Feb_2")
+spot_prices_RTM_mar_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Mar_3")
+spot_prices_RTM_apr_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Apr_4")
+spot_prices_RTM_may_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "May_5")
+spot_prices_RTM_jun_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Jun_6")
+spot_prices_RTM_jul_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Jul_7")
+spot_prices_RTM_aug_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Aug_8")
+spot_prices_RTM_sep_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Sep_9")
+spot_prices_RTM_oct_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Oct_10")
+spot_prices_RTM_nov_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Nov_11")
+spot_prices_RTM_dec_2015 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2015.xlsx", sheet = "Dec_12")
+```
+
+```{r}
+# Import 2016 prices
+spot_prices_RTM_jan_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Jan_1")
+spot_prices_RTM_feb_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Feb_2")
+spot_prices_RTM_mar_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Mar_3")
+spot_prices_RTM_apr_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Apr_4")
+spot_prices_RTM_may_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "May_5")
+spot_prices_RTM_jun_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Jun_6")
+spot_prices_RTM_jul_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Jul_7")
+spot_prices_RTM_aug_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Aug_8")
+spot_prices_RTM_sep_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Sep_9")
+spot_prices_RTM_oct_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Oct_10")
+spot_prices_RTM_nov_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Nov_11")
+spot_prices_RTM_dec_2016 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2016.xlsx", sheet = "Dec_12")
+```
+
+```{r}
+# Import 2017 prices
+spot_prices_RTM_jan_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Jan")
+spot_prices_RTM_feb_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Feb")
+spot_prices_RTM_mar_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Mar")
+spot_prices_RTM_apr_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Apr")
+spot_prices_RTM_may_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "May")
+spot_prices_RTM_jun_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Jun")
+spot_prices_RTM_jul_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Jul")
+spot_prices_RTM_aug_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Aug")
+spot_prices_RTM_sep_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Sep")
+spot_prices_RTM_oct_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Oct")
+spot_prices_RTM_nov_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Nov")
+spot_prices_RTM_dec_2017 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2017.xlsx", sheet = "Dec")
+```
+
+```{r}
+# Import 2018 prices
+spot_prices_RTM_jan_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Jan")
+spot_prices_RTM_feb_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Feb")
+spot_prices_RTM_mar_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Mar")
+spot_prices_RTM_apr_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Apr")
+spot_prices_RTM_may_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "May")
+spot_prices_RTM_jun_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Jun")
+spot_prices_RTM_jul_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Jul")
+spot_prices_RTM_aug_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Aug")
+spot_prices_RTM_sep_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Sep")
+spot_prices_RTM_oct_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Oct")
+spot_prices_RTM_nov_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Nov")
+spot_prices_RTM_dec_2018 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2018.xlsx", sheet = "Dec")
+```
+
+```{r}
+# Import 2019 prices
+spot_prices_RTM_jan_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Jan")
+spot_prices_RTM_feb_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Feb")
+spot_prices_RTM_mar_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Mar")
+spot_prices_RTM_apr_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Apr")
+spot_prices_RTM_may_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "May")
+spot_prices_RTM_jun_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Jun")
+spot_prices_RTM_jul_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Jul")
+spot_prices_RTM_aug_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Aug")
+spot_prices_RTM_sep_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Sep")
+spot_prices_RTM_oct_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Oct")
+spot_prices_RTM_nov_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Nov")
+spot_prices_RTM_dec_2019 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2019.xlsx", sheet = "Dec")
+```
+
+```{r}
+# Import 2020 prices
+spot_prices_RTM_jan_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Jan")
+spot_prices_RTM_feb_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Feb")
+spot_prices_RTM_mar_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Mar")
+spot_prices_RTM_apr_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Apr")
+spot_prices_RTM_may_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "May")
+spot_prices_RTM_jun_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Jun")
+spot_prices_RTM_jul_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Jul")
+spot_prices_RTM_aug_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Aug")
+spot_prices_RTM_sep_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Sep")
+spot_prices_RTM_oct_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Oct")
+spot_prices_RTM_nov_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Nov")
+spot_prices_RTM_dec_2020 <- read_excel("data/ERCOT_prices_historic/rpt.00013061.0000000000000000.RTMLZHBSPP_2020.xlsx", sheet = "Dec")
+```
+
+```{r}
+# Let's merge them all together:
+
+spot_prices_RTM <- rbind(spot_prices_RTM_dec_2010,
+                         spot_prices_RTM_jan_2011,
+                         spot_prices_RTM_feb_2011,
+                         spot_prices_RTM_mar_2011,
+                         spot_prices_RTM_apr_2011,
+                         spot_prices_RTM_may_2011,
+                         spot_prices_RTM_jun_2011,
+                         spot_prices_RTM_jul_2011,
+                         spot_prices_RTM_aug_2011,
+                         spot_prices_RTM_sep_2011,
+                         spot_prices_RTM_oct_2011,
+                         spot_prices_RTM_nov_2011,
+                         spot_prices_RTM_dec_2011,
+                         spot_prices_RTM_jan_2012,
+                         spot_prices_RTM_feb_2012,
+                         spot_prices_RTM_mar_2012,
+                         spot_prices_RTM_apr_2012,
+                         spot_prices_RTM_may_2012,
+                         spot_prices_RTM_jun_2012,
+                         spot_prices_RTM_jul_2012,
+                         spot_prices_RTM_aug_2012,
+                         spot_prices_RTM_sep_2012,
+                         spot_prices_RTM_oct_2012,
+                         spot_prices_RTM_nov_2012,
+                         spot_prices_RTM_dec_2012,
+                         spot_prices_RTM_jan_2013,
+                         spot_prices_RTM_feb_2013,
+                         spot_prices_RTM_mar_2013,
+                         spot_prices_RTM_apr_2013,
+                         spot_prices_RTM_may_2013,
+                         spot_prices_RTM_jun_2013,
+                         spot_prices_RTM_jul_2013,
+                         spot_prices_RTM_aug_2013,
+                         spot_prices_RTM_sep_2013,
+                         spot_prices_RTM_oct_2013,
+                         spot_prices_RTM_nov_2013,
+                         spot_prices_RTM_dec_2013,
+                         spot_prices_RTM_jan_2014,
+                         spot_prices_RTM_feb_2014,
+                         spot_prices_RTM_mar_2014,
+                         spot_prices_RTM_apr_2014,
+                         spot_prices_RTM_may_2014,
+                         spot_prices_RTM_jun_2014,
+                         spot_prices_RTM_jul_2014,
+                         spot_prices_RTM_aug_2014,
+                         spot_prices_RTM_sep_2014,
+                         spot_prices_RTM_oct_2014,
+                         spot_prices_RTM_nov_2014,
+                         spot_prices_RTM_dec_2014,
+                         spot_prices_RTM_jan_2015,
+                         spot_prices_RTM_feb_2015,
+                         spot_prices_RTM_mar_2015,
+                         spot_prices_RTM_apr_2015,
+                         spot_prices_RTM_may_2015,
+                         spot_prices_RTM_jun_2015,
+                         spot_prices_RTM_jul_2015,
+                         spot_prices_RTM_aug_2015,
+                         spot_prices_RTM_sep_2015,
+                         spot_prices_RTM_oct_2015,
+                         spot_prices_RTM_nov_2015,
+                         spot_prices_RTM_dec_2015,
+                         spot_prices_RTM_jan_2016,
+                         spot_prices_RTM_feb_2016,
+                         spot_prices_RTM_mar_2016,
+                         spot_prices_RTM_apr_2016,
+                         spot_prices_RTM_may_2016,
+                         spot_prices_RTM_jun_2016,
+                         spot_prices_RTM_jul_2016,
+                         spot_prices_RTM_aug_2016,
+                         spot_prices_RTM_sep_2016,
+                         spot_prices_RTM_oct_2016,
+                         spot_prices_RTM_nov_2016,
+                         spot_prices_RTM_dec_2016,
+                         spot_prices_RTM_jan_2017,
+                         spot_prices_RTM_feb_2017,
+                         spot_prices_RTM_mar_2017,
+                         spot_prices_RTM_apr_2017,
+                         spot_prices_RTM_may_2017,
+                         spot_prices_RTM_jun_2017,
+                         spot_prices_RTM_jul_2017,
+                         spot_prices_RTM_aug_2017,
+                         spot_prices_RTM_sep_2017,
+                         spot_prices_RTM_oct_2017,
+                         spot_prices_RTM_nov_2017,
+                         spot_prices_RTM_dec_2017,
+                         spot_prices_RTM_jan_2018,
+                         spot_prices_RTM_feb_2018,
+                         spot_prices_RTM_mar_2018,
+                         spot_prices_RTM_apr_2018,
+                         spot_prices_RTM_may_2018,
+                         spot_prices_RTM_jun_2018,
+                         spot_prices_RTM_jul_2018,
+                         spot_prices_RTM_aug_2018,
+                         spot_prices_RTM_sep_2018,
+                         spot_prices_RTM_oct_2018,
+                         spot_prices_RTM_nov_2018,
+                         spot_prices_RTM_dec_2018,
+                         spot_prices_RTM_jan_2019,
+                         spot_prices_RTM_feb_2019,
+                         spot_prices_RTM_mar_2019,
+                         spot_prices_RTM_apr_2019,
+                         spot_prices_RTM_may_2019,
+                         spot_prices_RTM_jun_2019,
+                         spot_prices_RTM_jul_2019,
+                         spot_prices_RTM_aug_2019,
+                         spot_prices_RTM_sep_2019,
+                         spot_prices_RTM_oct_2019,
+                         spot_prices_RTM_nov_2019,
+                         spot_prices_RTM_dec_2019,
+                         spot_prices_RTM_jan_2020,
+                         spot_prices_RTM_feb_2020,
+                         spot_prices_RTM_mar_2020,
+                         spot_prices_RTM_apr_2020,
+                         spot_prices_RTM_may_2020,
+                         spot_prices_RTM_jun_2020,
+                         spot_prices_RTM_jul_2020,
+                         spot_prices_RTM_aug_2020,
+                         spot_prices_RTM_sep_2020,
+                         spot_prices_RTM_oct_2020,
+                         spot_prices_RTM_nov_2020,
+                         spot_prices_RTM_dec_2020)
+                         
+                         
+# clean up
+
+rm(list = c("spot_prices_RTM_dec_2010", "spot_prices_RTM_jan_2011", "spot_prices_RTM_feb_2011", 
+"spot_prices_RTM_mar_2011", "spot_prices_RTM_apr_2011", "spot_prices_RTM_may_2011", 
+"spot_prices_RTM_jun_2011", "spot_prices_RTM_jul_2011", "spot_prices_RTM_aug_2011", 
+"spot_prices_RTM_sep_2011", "spot_prices_RTM_oct_2011", "spot_prices_RTM_nov_2011", 
+"spot_prices_RTM_dec_2011", "spot_prices_RTM_jan_2012", "spot_prices_RTM_feb_2012", 
+"spot_prices_RTM_mar_2012", "spot_prices_RTM_apr_2012", "spot_prices_RTM_may_2012", 
+"spot_prices_RTM_jun_2012", "spot_prices_RTM_jul_2012", "spot_prices_RTM_aug_2012", 
+"spot_prices_RTM_sep_2012", "spot_prices_RTM_oct_2012", "spot_prices_RTM_nov_2012", 
+"spot_prices_RTM_dec_2012", "spot_prices_RTM_jan_2013", "spot_prices_RTM_feb_2013", 
+"spot_prices_RTM_mar_2013", "spot_prices_RTM_apr_2013", "spot_prices_RTM_may_2013", 
+"spot_prices_RTM_jun_2013", "spot_prices_RTM_jul_2013", "spot_prices_RTM_aug_2013", 
+"spot_prices_RTM_sep_2013", "spot_prices_RTM_oct_2013", "spot_prices_RTM_nov_2013", 
+"spot_prices_RTM_dec_2013", "spot_prices_RTM_jan_2014", "spot_prices_RTM_feb_2014", 
+"spot_prices_RTM_mar_2014", "spot_prices_RTM_apr_2014", "spot_prices_RTM_may_2014", 
+"spot_prices_RTM_jun_2014", "spot_prices_RTM_jul_2014", "spot_prices_RTM_aug_2014", 
+"spot_prices_RTM_sep_2014", "spot_prices_RTM_oct_2014", "spot_prices_RTM_nov_2014", 
+"spot_prices_RTM_dec_2014", "spot_prices_RTM_jan_2015", "spot_prices_RTM_feb_2015", 
+"spot_prices_RTM_mar_2015", "spot_prices_RTM_apr_2015", "spot_prices_RTM_may_2015", 
+"spot_prices_RTM_jun_2015", "spot_prices_RTM_jul_2015", "spot_prices_RTM_aug_2015", 
+"spot_prices_RTM_sep_2015", "spot_prices_RTM_oct_2015", "spot_prices_RTM_nov_2015", 
+"spot_prices_RTM_dec_2015", "spot_prices_RTM_jan_2016", "spot_prices_RTM_feb_2016", 
+"spot_prices_RTM_mar_2016", "spot_prices_RTM_apr_2016", "spot_prices_RTM_may_2016", 
+"spot_prices_RTM_jun_2016", "spot_prices_RTM_jul_2016", "spot_prices_RTM_aug_2016", 
+"spot_prices_RTM_sep_2016", "spot_prices_RTM_oct_2016", "spot_prices_RTM_nov_2016", 
+"spot_prices_RTM_dec_2016", "spot_prices_RTM_jan_2017", "spot_prices_RTM_feb_2017", 
+"spot_prices_RTM_mar_2017", "spot_prices_RTM_apr_2017", "spot_prices_RTM_may_2017", 
+"spot_prices_RTM_jun_2017", "spot_prices_RTM_jul_2017", "spot_prices_RTM_aug_2017", 
+"spot_prices_RTM_sep_2017", "spot_prices_RTM_oct_2017", "spot_prices_RTM_nov_2017", 
+"spot_prices_RTM_dec_2017", "spot_prices_RTM_jan_2018", "spot_prices_RTM_feb_2018", 
+"spot_prices_RTM_mar_2018", "spot_prices_RTM_apr_2018", "spot_prices_RTM_may_2018", 
+"spot_prices_RTM_jun_2018", "spot_prices_RTM_jul_2018", "spot_prices_RTM_aug_2018", 
+"spot_prices_RTM_sep_2018", "spot_prices_RTM_oct_2018", "spot_prices_RTM_nov_2018", 
+"spot_prices_RTM_dec_2018", "spot_prices_RTM_jan_2019", "spot_prices_RTM_feb_2019", 
+"spot_prices_RTM_mar_2019", "spot_prices_RTM_apr_2019", "spot_prices_RTM_may_2019", 
+"spot_prices_RTM_jun_2019", "spot_prices_RTM_jul_2019", "spot_prices_RTM_aug_2019", 
+"spot_prices_RTM_sep_2019", "spot_prices_RTM_oct_2019", "spot_prices_RTM_nov_2019", 
+"spot_prices_RTM_dec_2019", "spot_prices_RTM_jan_2020", "spot_prices_RTM_feb_2020", 
+"spot_prices_RTM_mar_2020", "spot_prices_RTM_apr_2020", "spot_prices_RTM_may_2020", 
+"spot_prices_RTM_jun_2020", "spot_prices_RTM_jul_2020", "spot_prices_RTM_aug_2020", 
+"spot_prices_RTM_sep_2020", "spot_prices_RTM_oct_2020", "spot_prices_RTM_nov_2020", 
+"spot_prices_RTM_dec_2020"))
 ```
 
