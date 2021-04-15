@@ -1,0 +1,92 @@
+---
+title: "pca, pcr, pls"
+author: "Vivek"
+date: "3/25/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Clear environment
+rm(list = ls())
+
+library(readr)
+library(zoo)
+#library(ISLR) #Has all the datasets used in the textbook
+#hit <- Hitters #Save Hitters dataset 
+
+timeseries <- read_csv("data/Cleaned Data/cleaned_timeseries_data.csv")
+
+# Hitters is the MLB data from 1986, 1987 seasons - check details in help section ISLR>>Hitters
+
+sum(is.na(timeseries)) #Check for NAs
+timeseries <- na.fill(timeseries,0) #Remove rows with NAs to retain complete rows
+
+#str(timeseries) # Note that 3 predictors are in factor format. PCA/PCR analyses accept only numerical inputs. So we need to convert the factors into dummy variables
+
+hit <- timeseries[,c(2:10,110)]
+hit <- as.data.frame(hit)
+hit[,] <- sapply(hit[,], as.numeric)
+#hit <- sapply( hit, as.numeric )
+
+#install.packages("fastDummies")
+#library(fastDummies)
+#hit <- dummy_cols(hit, remove_first_dummy = TRUE, remove_selected_columns = TRUE)
+
+```
+
+```{r}
+
+## PCA ##
+
+mod.pca <- prcomp(hit, center = TRUE, scale. = TRUE)
+summary(mod.pca) 
+
+library(ggfortify)
+autoplot(mod.pca, alpha = 0.3,
+         loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3)
+# Notice which variables contribute more towards PC1 and PC2 respectively
+```
+
+
+
+```{r}
+
+## PCR ##
+
+#Find the best PCR and PLS models to predic Salary using other variables in the hitters dataset
+
+# Create training and test index
+set.seed (1)
+train <- sample(c(TRUE,FALSE), nrow(hit), rep=TRUE, prob = c(0.8,0.2))
+test <- (!train)
+
+#install.packages("pls")
+library(pls)
+
+mod.pcr <- pcr(mean_spot_price ~., data = hit[train,], scale = TRUE, center = TRUE, validation = "CV")
+summary(mod.pcr) # Notice how many PCs do you need to explain 60% of variation in salary? [~16]
+validationplot(mod.pcr, val.type = "MSEP", main = "CV Plot for PCR") # How many PCs would you choose based on the CV plot?
+
+pred.pcr <- predict(mod.pcr, hit[test,], ncomp = 2) #predict using test set
+mean((pred.pcr - hit$Coal[test])^2) #calculate test MSE
+
+
+## PLS ##
+
+mod.plsr <- plsr(Coal ~., data = hit[train,], scale = TRUE, center = TRUE, validation = "CV")
+summary(mod.plsr) # Notice how many PCs do you need to explain 60% of variation in salary? [~7]
+validationplot(mod.plsr, val.type = "MSEP", main = "CV Plot for PLS") # How many PCs would you choose based on the CV plot?
+
+pred.plsr <- predict(mod.plsr, hit[test,], ncomp = 2) #predict using test set
+mean((pred.plsr - hit$Coal[test])^2) #calculate test MSE
+
+summary(mod.pcr)
+
+```
+
+
+
