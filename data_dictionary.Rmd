@@ -13,6 +13,7 @@ rm(list=ls())
 library(readr)
 library(kableExtra)
 library(zoo)
+library(psych)
 ```
 
 ```{r}
@@ -61,6 +62,9 @@ plant_level_zoo <- read.zoo(file="data/Cleaned Data/eGRID_wide_aggregate.csv", h
 
 ```{r}
 zonal_spot_price_zoo <- read.zoo(file = "data/Cleaned Data/daily_dam_zonal_spot_price_agg.csv", header = TRUE, sep=",", format = "%Y-%m-%d")
+
+zonal_spot_price_zoo <- zonal_spot_price_zoo[,! colnames(zonal_spot_price_zoo) %in% c("min_spot_price","max_spot_price")]
+
 ```
 
 ```{r}
@@ -112,20 +116,35 @@ merge_fill0 <- na.fill(filled_daily_merge,0)
 ```
 
 ```{r}
+dates <- seq(from = as.Date("2010-12-01"), to = as.Date("2019-12-31"), by = 1)
+empty <- zoo(, dates)
+
+trimmed_zeroes <- merge(empty, merge_fill0, all=FALSE)
+
+
+# removing the max and min spot prices 
+colnames(trimmed_zeroes)[11] = 'mean_spot_price'
+```
+
+```{r}
 write.zoo(merge_fill0, file="data/Cleaned Data/cleaned_timeseries_data_zeroes.csv", index.name = "Date", sep=",")
 
-write.zoo(splined_merge, file="data/Cleaned Data/cleaned_timeseries_data_splined.csv", index.name = "Date", sep=",")
+write.zoo(trimmed_zeroes, file="data/Cleaned Data/cleaned_timeseries_data_zeroes_trimmed.csv", index.name = "Date", sep=",")
 
-write.zoo(filled_daily_merge, file="data/Cleaned Data/cleaned_timeseries_data_filled.csv", index.name = "Date", sep=",")
+#write.zoo(splined_merge, file="data/Cleaned Data/cleaned_timeseries_data_splined.csv", index.name = "Date", sep=",")
+
+#write.zoo(filled_daily_merge, file="data/Cleaned Data/cleaned_timeseries_data_filled.csv", index.name = "Date", sep=",")
 ```
 
 
 ```{r}
-autoplot.zoo(filled_daily_merge)
+#autoplot.zoo(filled_daily_merge)
 ```
 
 ```{r}
 describe(merge_fill0)
+
+describe(trimmed_zeroes)
 ```
 
 
@@ -133,38 +152,82 @@ describe(merge_fill0)
 library(ggplot2)
 library(GGally)
 
-ggpairs(merge_fill0)    
+#ggpairs(merge_fill0)    
 ```
 ```{r}
 cleaned_timeseries_data_zeroes <- read_csv("~/EER Thesis/ERCOT Transition Analysis/data/Cleaned Data/cleaned_timeseries_data_zeroes.csv", 
+    col_types = cols(Date = col_date(format = "%Y-%m-%d")))
+
+trimmed_timeseries_data_zeroes <- read_csv("~/EER Thesis/ERCOT Transition Analysis/data/Cleaned Data/cleaned_timeseries_data_zeroes_trimmed.csv", 
     col_types = cols(Date = col_date(format = "%Y-%m-%d")))
 ```
 
 ```{r}
 #ggpairs(cleaned_timeseries_data_zeroes,lower = list(continuous = "smooth"))
 
-cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999", "#000000")
+#cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999", "#000000")
 
 
-ggpairs(cleaned_timeseries_data_zeroes, mapping=ggplot2::aes(colour = as.factor(Season), alpha=0.75),
-              lower=list(continuous="smooth"),
-              #upper=list(continuous="blank"),
-              axisLabels="none", switch="both") +
-              theme_bw() +
-              scale_color_manual(values=cbPalette) +
-              scale_fill_manual(values=cbPalette)
+#ggpairs(cleaned_timeseries_data_zeroes, mapping=ggplot2::aes(colour = as.factor(Season), alpha=0.75),
+#              lower=list(continuous="smooth"),
+#              #upper=list(continuous="blank"),
+#              axisLabels="none", switch="both") +
+#              theme_bw() +
+#              scale_color_manual(values=cbPalette) +
+#              scale_fill_manual(values=cbPalette)
 
-ggsave("daily_correlogram.png", path="misc_stuff/", device="png",width=14, height=14)
+#ggsave("daily_correlogram.png", path="misc_stuff/", device="png",width=14, height=14)
 ```
 
 ```{r}
-ggcorr(cleaned_timeseries_data_zeroes)
+#ggcorr(cleaned_timeseries_data_zeroes)
+
+ggcorr(trimmed_timeseries_data_zeroes)
 
 ggsave("daily_correlation_matrix.png", path="misc_stuff/", device = "png")
 
 ```
 
 ```{r}
+library(forecast)
+Ccf(cleaned_timeseries_data_zeroes[,3], cleaned_timeseries_data_zeroes[,4])
+acf(cleaned_timeseries_data_zeroes, main = "Significant Autocorrelations")
+```
+
+```{r}
+coal_arima <- auto.arima(trimmed_timeseries_data_zeroes[,3])
+
+
+checkresiduals(coal_arima, main="Coal Residuals")
+
+wind_arima <- auto.arima(trimmed_timeseries_data_zeroes[,4])
+
+
+checkresiduals(wind_arima, main="Wind Residuals")
+
+gas_arima <- auto.arima(trimmed_timeseries_data_zeroes[,2])
+
+
+checkresiduals(gas_arima, main="Gas Residuals")
+```
+
+
+Let's make the data tall/long for some nice graphing.
+```{r}
+library(tidyr)
+
+long_cleaned_data <- gather(cleaned_timeseries_data_zeroes, Date, "MWh", Gas:Gas_Price)
+```
+
+
+```{r}
+```
+
+```{r}
+plot(merge_fill0,col=rainbow(ncol(merge_fill0))) 
+
+
+plot(trimmed_zeroes[,colnames(trimmed_zeroes) != "Season"],col=rainbow(ncol(trimmed_zeroes[,colnames(trimmed_zeroes) != "Season"])), main="Daily Timeseries Data") 
 
 ```
 
