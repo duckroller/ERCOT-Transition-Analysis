@@ -1,0 +1,84 @@
+---
+title: "Autocorrelation and ARIMA"
+author: "Eli Ramthun"
+date: "4/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list=ls())
+```
+
+
+```{r}
+library(zoo)
+```
+
+
+```{r}
+
+daily_data_zoo <- read.zoo(file = "data/Cleaned Data/cleaned_timeseries_data_zeroes_trimmed.csv", header = TRUE, sep=",", format = "%Y-%m-%d")
+
+```
+
+
+```{r}
+describe(daily_data_zoo)
+```
+
+```{r}
+library(forecast)
+
+#describe(daily_data_zoo[ ,! colnames(daily_data_zoo) %in% c("Season")])
+
+acf(daily_data_zoo[,1], main = "Significant Autocorrelations: Gas")
+
+acf(daily_data_zoo[,2], main = "Significant Autocorrelations: Coal")
+
+acf(daily_data_zoo[,3], main = "Significant Autocorrelations: Wind")
+
+acf(daily_data_zoo[,4], main = "Significant Autocorrelations: Hydro")
+
+acf(daily_data_zoo[,5], main = "Significant Autocorrelations: Nuclear")
+
+acf(daily_data_zoo[,6], main = "Significant Autocorrelations: Solar")
+
+acf(daily_data_zoo[,7], main = "Significant Autocorrelations: Biomass")
+
+acf(daily_data_zoo[,8], main = "Significant Autocorrelations: Other")
+
+acf(daily_data_zoo[,9], main = "Significant Autocorrelations: Gas Price")
+
+acf(daily_data_zoo[,10], main = "Significant Autocorrelations: Zonal Spot Price")
+
+
+
+
+
+```
+
+```{r}
+wind <- coredata(daily_data_zoo)[, 3]
+price <- coredata(daily_data_zoo)[, 10]
+
+Ccf(wind, price, main = "Wind vs. Price")
+```
+
+```{r}
+#Wind arima
+
+wind_arima <- auto.arima(daily_data_zoo[,3])
+
+checkresiduals(wind_arima)
+
+# Wind and price
+
+electric_price_arima <- auto.arima(daily_data_zoo[,10])
+
+checkresiduals(electric_price_arima)
+```
+
