@@ -50,6 +50,8 @@ Going to use the zoo package to make these time series a little easier to work w
 
 fuel_mix_zoo <- read.zoo(file="data/Cleaned Data/fuel_mix_report_clean_wide.csv", header = TRUE, sep=",", format = "%Y-%m-%d")
 
+fuel_mix_zoo <- fuel_mix_zoo[,! colnames(fuel_mix_zoo) %in% c("Season")]
+
 ```
 
 
@@ -123,7 +125,7 @@ trimmed_zeroes <- merge(empty, merge_fill0, all=FALSE)
 
 
 # removing the max and min spot prices 
-colnames(trimmed_zeroes)[11] = 'mean_spot_price'
+colnames(trimmed_zeroes)[10] = 'mean_spot_price'
 ```
 
 ```{r}
@@ -154,6 +156,7 @@ library(GGally)
 
 #ggpairs(merge_fill0)    
 ```
+
 ```{r}
 cleaned_timeseries_data_zeroes <- read_csv("~/EER Thesis/ERCOT Transition Analysis/data/Cleaned Data/cleaned_timeseries_data_zeroes.csv", 
     col_types = cols(Date = col_date(format = "%Y-%m-%d")))
