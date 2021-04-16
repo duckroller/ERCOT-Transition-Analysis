@@ -31,18 +31,18 @@ library(leaps)
 
 df <- read.csv(file="data/Cleaned Data/cleaned_timeseries_data_zeroes.csv")
 
-df <- subset(df, select=-c(Season,Date))
+df <- subset(df, select=-c(Season,Date, min_spot_price,max_spot_price))
 ```
 
 ```{r}
 
 # Forward stepsise selection
-mod.fwd <- regsubsets(Coal ~ ., data = df, nvmax = 6, method = "forward") #Models with upto 10 predictors
+mod.fwd <- regsubsets(mean_spot_price ~ ., data = df, nvmax = 6, method = "forward") #Models with upto 10 predictors
 mod.fwd.sum <- summary(mod.fwd) 
 #mod.fwd.sum #Notice which variables are selected in 1,2,3....19 variable models respectively and in what order
 
 # Backward stepwise selection
-mod.bck <- regsubsets(Coal ~ ., data = df, nvmax = 6, method = "backward")#Models with upto 8 predictors
+mod.bck <- regsubsets(mean_spot_price ~ ., data = df, nvmax = 6, method = "backward")#Models with upto 8 predictors
 mod.bck.sum <- summary(mod.bck) 
 #mod.bck.sum #Notice which variables are selected in 19,18,17...1 variable models respectively and in what order
 
@@ -62,7 +62,7 @@ bcks <- colnames(bck_choices[,which(bck_choices[6,]=="TRUE")])[2:7]
 Forward stepwise selection chose `r fwds` as its predictors; backword stepwise selection chose `r bcks` as its predictors.
 
 ```{r}
-simple_lm <- lm(Coal ~ Gas + Wind + Nuclear + Solar + Gas_Price + min_spot_price, data= df)
+simple_lm <- lm(Coal ~ Gas + Wind + Nuclear + Solar + Gas_Price + , data= df)
 summary(simple_lm)
 ```
 
