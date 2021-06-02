@@ -32,6 +32,14 @@ hit <- as.data.frame(hit)
 hit[,] <- sapply(hit[,], as.numeric)
 #hit <- sapply( hit, as.numeric )
 
+#define Min-Max normalization function
+min_max_norm <- function(x) {
+    (x - min(x)) / (max(x) - min(x))
+  }
+
+#apply Min-Max normalization to the dataset
+hit <- as.data.frame(lapply(hit, min_max_norm))
+
 #install.packages("fastDummies")
 #library(fastDummies)
 #hit <- dummy_cols(hit, remove_first_dummy = TRUE, remove_selected_columns = TRUE)
