@@ -1,0 +1,147 @@
+---
+title: "ERCOT Load Data Import"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. Used to import and clean (if necessary) hourly load data from ERCOT. Whoopee.
+
+
+```{r}
+#clean workspace
+rm(list = ls())
+```
+
+
+```{r}
+library(readxl)
+```
+
+```{r}
+hourly_load_data_2010 <- read_excel("data/ercot_load/2010_ERCOT_Hourly_Load_Data.xls", 
+    col_types = c("date", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+colnames(hourly_load_data_2010) <- c("HourEnding", "ERCOT")
+```
+
+```{r}
+hourly_load_data_2011 <- read_excel("data/ercot_load/2011_ERCOT_Hourly_Load_Data.xls", 
+    col_types = c("date", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+colnames(hourly_load_data_2011) <- c("HourEnding", "ERCOT")
+
+```
+
+```{r}
+hourly_load_data_2012 <- read_excel("data/ercot_load/2012_ERCOT_Hourly_Load_Data.xls", 
+    col_types = c("date", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+colnames(hourly_load_data_2012) <- c("HourEnding", "ERCOT")
+
+
+```
+
+```{r}
+hourly_load_data_2013 <- read_excel("data/ercot_load/2013_ERCOT_Hourly_Load_Data.xls", 
+    col_types = c("date", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+colnames(hourly_load_data_2013) <- c("HourEnding", "ERCOT")
+
+```
+
+```{r}
+hourly_load_data_2014 <- read_excel("data/ercot_load/2014_ERCOT_Hourly_Load_Data.xls", 
+    col_types = c("date", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+colnames(hourly_load_data_2014) <- c("HourEnding", "ERCOT")
+
+```
+
+```{r}
+hourly_load_data_2015 <- read_excel("data/ercot_load/native_Load_2015.xls", 
+    col_types = c("date", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+colnames(hourly_load_data_2015) <- c("HourEnding", "ERCOT")
+
+```
+
+```{r}
+hourly_load_data_2016 <- read_excel("data/ercot_load/native_Load_2016.xlsx", 
+    col_types = c("date", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+colnames(hourly_load_data_2016) <- c("HourEnding", "ERCOT")
+
+
+```
+
+```{r}
+hourly_load_data_2017 <- read_xlsx("data/ercot_load/native_Load_2017.xlsx", 
+    col_types = c("text", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+hourly_load_data_2017$`Hour Ending` <- as.POSIXct(hourly_load_data_2017$`Hour Ending`, format = "%m/%d/%Y %H:%M")
+
+colnames(hourly_load_data_2017) <- c("HourEnding", "ERCOT")
+
+```
+
+```{r}
+hourly_load_data_2018 <- read_excel("data/ercot_load/native_Load_2018.xlsx", 
+    col_types = c("text", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+hourly_load_data_2018$HourEnding <- as.POSIXct(hourly_load_data_2018$HourEnding, format = "%m/%d/%Y %H:%M")
+
+```
+
+```{r}
+hourly_load_data_2019 <- read_excel("data/ercot_load/native_Load_2019.xlsx", 
+    col_types = c("text", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+hourly_load_data_2019$HourEnding <- as.POSIXct(hourly_load_data_2019$HourEnding, format = "%m/%d/%Y %H:%M")
+
+```
+
+```{r}
+hourly_load_data_2020 <- read_excel("data/ercot_load/native_Load_2020.xlsx", 
+    col_types = c("text", "skip", "skip", 
+        "skip", "skip", "skip", "skip", "skip", 
+        "skip", "numeric"))
+
+hourly_load_data_2020$HourEnding <- as.POSIXct(hourly_load_data_2020$HourEnding, format = "%m/%d/%Y %H:%M")
+```
+
+
+Gee, that was painless. Happy they're all in the same format. Let's mash 'em together!
+
+```{r}
+hourly_load_data <- rbind(hourly_load_data_2010, hourly_load_data_2011, hourly_load_data_2012, hourly_load_data_2013, hourly_load_data_2014, hourly_load_data_2015, hourly_load_data_2016, hourly_load_data_2017, hourly_load_data_2018, hourly_load_data_2019, hourly_load_data_2020)
+
+rm(list = c("hourly_load_data_2010", "hourly_load_data_2011", "hourly_load_data_2012", "hourly_load_data_2013", "hourly_load_data_2014", "hourly_load_data_2015", "hourly_load_data_2016", "hourly_load_data_2017", "hourly_load_data_2018", "hourly_load_data_2019", "hourly_load_data_2020"))
+```
+
+```{r}
+plot(hourly_load_data)
+```
+
+```{r}
+write.csv(hourly_load_data,"data/Cleaned Data/hourly_load_data.csv", row.names=FALSE)
+```
+
