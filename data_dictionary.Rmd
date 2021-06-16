@@ -48,9 +48,13 @@ Going to use the zoo package to make these time series a little easier to work w
 
 ```{r}
 
-fuel_mix_zoo <- read.zoo(file="data/Cleaned Data/fuel_mix_report_clean_wide.csv", header = TRUE, sep=",", format = "%Y-%m-%d")
+fuel_mix_zoo <- read.zoo(file="data/Cleaned Data/fuel_mix_report_15min_wide.csv", header = TRUE, sep=",", format = "%Y-%m-%d %T")
 
 fuel_mix_zoo <- fuel_mix_zoo[,! colnames(fuel_mix_zoo) %in% c("Season")]
+
+x <- read.csv(file="data/Cleaned Data/fuel_mix_report_15min_wide.csv")
+x <- na.fill(x,0)
+fuel_mix_zoo <- zoo(x)
 
 ```
 
