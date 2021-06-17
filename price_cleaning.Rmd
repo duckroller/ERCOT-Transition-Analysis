@@ -672,7 +672,7 @@ spot_prices_RTM <- subset(spot_prices_RTM, select = -c(1:4))
 
 
 ```{r}
-write.csv(spot_prices_RTM,"data/ERCOT_prices_historic/spot_prices_RTM.csv")
+write.csv(spot_prices_RTM,"data/ERCOT_prices_historic/spot_prices_RTM.csv", row.names = FALSE)
 ```
 
 
@@ -686,7 +686,7 @@ rtm.means <- aggregate(spot_prices_RTM[spot_prices_RTM$point_name=="HB_HUBAVG","
 ```
 
 ```{r}
-write.csv(rtm.means,"data/Cleaned Data/hourly_zonal_spot_price_RTM.csv")
+write.csv(rtm.means,"data/Cleaned Data/hourly_zonal_spot_price_averages_RTM.csv")
 
 ```
 
