@@ -41,6 +41,7 @@ vignettes/*.pdf
 
 #don't upload big data files
 data/*
+!data/ERCOT_Dataset_8June2021.csv #this one's ok tho
 misc_stuff/*
 daily_spot_price_agg.csv
 desktop.ini
