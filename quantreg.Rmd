@@ -1,0 +1,277 @@
+---
+title: "ERCOT Quantic Regression"
+output: html_notebook
+---
+
+
+
+```{r}
+library(quantreg)
+library(readr)
+library(GGally)
+```
+The following adapted from the R Notebook "Tutorial: Quantile Regression using R" by Ibn Abdullah, February 15, 2016
+https://rstudio-pubs-static.s3.amazonaws.com/152505_49d1881e3fe64f0bad072282c36a6ca5.html
+
+```{r}
+ERCOTData <- read_csv("data/ERCOT_Dataset_8June2021.csv", col_types = cols(DA_awarded_MW_PWRSTR = col_double()),  na.strings = ".")
+ERCOTData <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
+```
+
+```{r}
+attach(ERCOTData)
+summary(ERCOTData)
+
+```
+
+```{r}
+datatable=data.frame(RTM_price_weighted_Hub, wind, henry, mwh_sys, nuclear, solar)
+
+datatable <- na.omit(datatable)
+
+cor(datatable)
+```
+
+```{r}
+ggpairs(datatable)
+
+ggpairs(datatable, alpha=0.75,
+              lower=list(continuous="smooth"),
+              #upper=list(continuous="blank"),
+              axisLabels="none", switch="both") +
+              theme_bw()
+```
+
+```{r}
+Y = cbind(RTM_price_weighted_Hub)
+X = cbind(wind, henry, mwh_sys, nuclear, solar)
+
+```
+
+```{r}
+hist(Y, prob=TRUE, col = "blue", border = "black")
+lines(density(na.omit(Y)))
+
+```
+
+```{r}
+OLSreg=lm(Y~X)
+
+summary(OLSreg)
+```
+
+```{r}
+Qreg25=rq(Y~X, tau=0.25)
+
+summary(Qreg25)
+```
+
+```{r}
+Qreg75=rq(Y~X, tau=0.75)
+
+summary(Qreg75)
+```
+
+```{r}
+anova(Qreg25, Qreg75)
+```
+
+```{r}
+QR=rq(Y~X, tau=c(0.75, 0.90, 0.95, 0.99))
+
+sumQR=summary(QR)
+```
+
+```{r}
+plot(sumQR)
+```
+
+
+```{r}
+regional_and_time_regressions <- function(df, time=11, region='ercot', t=c(0.10, 0.25, 0.50, 0.75, 0.90)){
+  #'''default time 11 AM, default region is system wide, default quantiles are 0.10, 0.25, 0.50, 0.75, 0.90'''
+  attach(df)
+  newdata <- df[ which(hourstart==time),]
+  detach(df)
+  
+  attach(newdata)
+  
+  if (region=='ercot'){
+    #datatable = data.frame(RTM_price_weighted_Hub, wind, henry, mwh_sys, nuclear, solar)
+    Y = cbind(RTM_price_weighted_Hub)
+    X = cbind(wind, henry, mwh_sys, nuclear, solar)
+  } else if (region=='north') {
+    #datatable = data.frame(RTM_price_weighted_north, wind_actual_west_north, henry, NorthLoad, nuclear, solar)
+    Y = cbind(RTM_price_weighted_north)
+    X = cbind(wind_actual_west_north, henry, NorthLoad, nuclear, solar)
+  } else if (region=='houston') {
+    #datatable = data.frame(RTM_price_weighted_houston, wind_actual_south_houston, henry, HouLoad, nuclear, solar)
+    Y = cbind(RTM_price_weighted_houston)
+    X = cbind(wind_actual_south_houston, henry, HouLoad, nuclear, solar)
+  } else if (region=='south') {
+    #datatable = data.frame(RTM_price_weighted_south, wind_actual_south_houston, henry, SOUTHLoad, nuclear, solar)
+    Y = cbind(RTM_price_weighted_south)
+    X = cbind(wind_actual_south_houston, henry, SOUTHLoad, nuclear, solar)
+  } else if (region=='west') {
+    #datatable = data.frame(RTM_price_weighted_west, wind_actual_west_north, henry, WestLoad, nuclear, solar)
+    Y = cbind(RTM_price_weighted_west)
+    X = cbind(wind_actual_west_north, henry, WestLoad, nuclear, solar)
+  } else {
+    print("give better region name pls")
+    break
+  }
+
+  detach(newdata)
+
+  QR=rq(Y~X, tau=t)
+
+  sumQR=summary(QR)
+  
+  return(sumQR)
+
+  
+  
+}
+
+```
+
+```{r}
+
+detach(ERCOTData)
+
+for (r in c('ercot', 'north', 'west', 'south', 'houston')){
+  for (t in c(11,16)) {
+    #print(paste("Quantile Regression for the ",r,"zone at ",t," o'clock."))
+    png(filename = paste("misc_stuff\\graphing_files\\Quantile_Results\\15-18_quantile_", r, "_", t, ".png",sep = ""))
+    par(oma=c(3,3,3,3))
+    plot(regional_and_time_regressions(ERCOTData[ERCOTData$year>=2015 & ERCOTData$year<=2019,],region = r, time = t))
+    mtext(paste("Quantile Regression for the ",r,"zone at ",t," o'clock. 2015-2018 data"), outer = TRUE, cex = 1.5, line = 1)
+    dev.off()
+  }
+}
+
+```
+
+```{r}
+plot(sumQR)
+```
+
+
+
+
+
+Next, the example quantreg code from https://rdrr.io/cran/quantreg/man/rq.html
+
+
+
+```{r}
+# data(stackloss)
+# rq(stack.loss ~ stack.x,.5)  #median (l1) regression  fit for the stackloss data. 
+# rq(stack.loss ~ stack.x,.25)  #the 1st quartile, 
+#       #note that 8 of the 21 points lie exactly on this plane in 4-space! 
+# rq(stack.loss ~ stack.x, tau=-1)   #this returns the full rq process
+# rq(rnorm(50) ~ 1, ci=FALSE)    #ordinary sample median --no rank inversion ci
+# rq(rnorm(50) ~ 1, weights=runif(50),ci=FALSE)  #weighted sample median 
+
+
+rq(Y ~ X,.5)  #median (l1) regression  fit for the stackloss data. 
+rq(Y ~ X,.25)  #the 1st quartile, 
+        #note that 8 of the 21 points lie exactly on this plane in 4-space! 
+#rq(Y ~ X, tau=-1)   #this returns the full rq process, vector size of 171 GB too big for my machine qq
+rq(rnorm(50) ~ 1, ci=FALSE)    #ordinary sample median --no rank inversion ci
+rq(rnorm(50) ~ 1, weights=runif(50),ci=FALSE)  #weighted sample median 
+
+```
+
+```{r}
+#plot of engel data and some rq lines see KB(1982) for references to data
+# data(engel)
+# attach(engel)
+# plot(income,foodexp,xlab="Household Income",ylab="Food Expenditure",type = "n", cex=.5)
+# points(income,foodexp,cex=.5,col="blue")
+# taus <- c(.05,.1,.25,.75,.9,.95)
+# xx <- seq(min(income),max(income),100)
+# f <- coef(rq((foodexp)~(income),tau=taus))
+# yy <- cbind(1,xx)%*%f
+# for(i in 1:length(taus)){
+#         lines(xx,yy[,i],col = "gray")
+#         }
+# abline(lm(foodexp ~ income),col="red",lty = 2)
+# abline(rq(foodexp ~ income), col="blue")
+# legend(3000,500,c("mean (LSE) fit", "median (LAE) fit"),
+# 	col = c("red","blue"),lty = c(2,1))
+
+
+plot(wind,RTM_price_weighted_Hub,xlab="Wind Generation (MWh)",ylab="RTM Price (Weighted Hub Average, $/MWh)",type = "n", cex=.5)
+points(wind,RTM_price_weighted_Hub,cex=.5,col="blue")
+taus <- c(.05,.1,.25,.75,.9,.95)
+xx <- seq(min(na.omit(wind)),max(na.omit(wind)),100)
+f <- coef(rq((RTM_price_weighted_Hub)~(wind),tau=taus))
+yy <- cbind(1,xx)%*%f
+for(i in 1:length(taus)){
+        lines(xx,yy[,i],col = "gray")
+        }
+abline(lm(RTM_price_weighted_Hub ~ wind),col="red",lty = 2)
+abline(rq(RTM_price_weighted_Hub ~ wind), col="blue")
+legend(3000,500,c("mean (LSE) fit", "median (LAE) fit"),
+	col = c("red","blue"),lty = c(2,1))
+```
+
+```{r}
+#Example of plotting of coefficients and their confidence bands
+#plot(summary(rq(foodexp~income,tau = 1:49/50,data=engel)))
+
+#this takes forever, I ran it once and exported the figure...
+#plot(summary(rq(RTM_price_weighted_Hub~wind,tau = 1:49/50,data=ERCOTData)))
+```
+
+```{r}
+#Example to illustrate inequality constrained fitting
+n <- 100
+p <- 5
+X <- matrix(rnorm(n*p),n,p)
+y <- .95*apply(X,1,sum)+rnorm(n)
+#constrain slope coefficients to lie between zero and one
+R <- cbind(0,rbind(diag(p),-diag(p)))
+r <- c(rep(0,p),-rep(1,p))
+rq(y~X,R=R,r=r,method="fnc")
+```
+
+```{r}
+library(plotly)
+library(MASS)
+library(dplyr)
+
+p <- ggplot(datatable, aes(log(wind), log(RTM_price_weighted_Hub))) +
+  geom_point(size = 1) +
+  geom_quantile(quantiles = 1:9/10, size = 2, aes(colour = ..quantile..)) +
+  scale_alpha(range = c(0.3, 0.7)) +
+  geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE)
+
+p
+```
+
+```{r}
+
+attach(ERCOTData[ERCOTData$hourstart==18,])
+```
+
+```{r}
+west_6pm_datatable=data.frame(RTM_price_weighted_west, wind_actual_west_north, henry, WestLoad, nuclear, solar)
+
+west_6pm_datatable <- na.omit(west_6pm_datatable)
+
+
+p <- ggplot(west_6pm_datatable, aes(log(wind_actual_west_north), log(RTM_price_weighted_west))) +
+  geom_point(size = 1) +
+  geom_quantile(quantiles = 1:9/10, size = 2, aes(colour = ..quantile..)) +
+  scale_alpha(range = c(0.3, 0.7)) +
+  geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE)
+
+p
+```
+
+```{r}
+detach(ERCOTData[ERCOTData$hourstart==18,])
+```
+
