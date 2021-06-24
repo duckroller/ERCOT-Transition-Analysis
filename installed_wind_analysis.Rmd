@@ -1,0 +1,63 @@
+---
+title: "Installed Wind Capacity vs. Wind Generation"
+output: html_notebook
+---
+
+Going to use this notebook to look at how installed wind capacity looks as a metric, compared to just straight up wind generation.
+
+```{r}
+library(readxl)
+library(readr)
+library(ggplot2)
+library(hrbrthemes)
+library("ggpubr")
+```
+
+```{r}
+wind_capacity <- read_excel("data/Capacity_Changes_by_Fuel_Type_Charts_May_2021.xlsx", 
+    range = "A74:B97", col_names = c("year", "windcap"))
+
+wind_capacity$windcap <- as.numeric(wind_capacity$windcap)
+
+ercot_dataset <- read_csv("data/ERCOT_Dataset_8June2021.csv")
+wind_generation <- data.frame(cbind(year = ercot_dataset$year, month = ercot_dataset$month, 
+                                    day = ercot_dataset$day, windgen = ercot_dataset$wind))
+
+wind_gen_annual_sum <- aggregate(windgen ~ year,       # Aggregate data
+                        wind_generation,
+                        FUN = sum)
+
+
+wind_data <- merge(wind_capacity, wind_gen_annual_sum, by = 'year')
+
+wind_data$windcap <- as.numeric(wind_data$windcap)
+```
+
+```{r}
+ggscatter(wind_data, x = "windcap", y = "windgen", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Cumulative Installed Wind Generation Capacity in ERCOT", 
+          ylab = "Annual Wind Generation in ERCOT(MWh)" ) +
+          theme_bw()
+
+```
+
+```{r}
+# Shapiro-Wilk normality test for mpg
+shapiro.test(wind_data$windcap) # => p = 0.3536
+# Shapiro-Wilk normality test for wt
+shapiro.test(wind_data$windgen) # => p = 0.2721
+```
+
+Normally distributed, so we can test for correlation with Pearson.
+
+```{r}
+res <- cor.test(wind_data$windcap, wind_data$windgen, 
+                    method = "pearson")
+res
+```
+
+With a p-value of 1.4e-07 and a correlation coefficient of 0.986485, we can conclude generation and capacity are significantly correlated.
+
+
