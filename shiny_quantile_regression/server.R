@@ -8,25 +8,62 @@ function(input, output, session) {
     #   input$algo
     # })
   
-    
+    # TODO: just do it all in here lmao
+    # pull name lists
+    # cbind up a temp df, but include year etc
+    # maybe gets bundled with the quantile crunching method too
+    # # lets me do progress bar stuff
+    # 
     # Combine the selected variables into a new data frame
      selected_data <- eventReactive(input$go, {
          cbind("Y" = explained(), predictors())#ercot_ts[, c(input$xcols, input$ycol)]
      })
+     
+    
+    time_window_start <- eventReactive(input$go, {
+      input$date_range[1]
+    })
+    
+    time_window_stop <- eventReactive(input$go, {
+      input$date_range[2]
+    })
     
     
     # TODO: add time selection
+    # predictors <- eventReactive(input$go, {
+    #   subset(ercot_ts[,input$xcols], 
+    #          ercot_ts$year >= time_window_start() & 
+    #            ercot_ts$year <= time_window_stop())
+    # })
+    # 
+    # explained <- eventReactive(input$go, {
+    #   subset(ercot_ts[,input$ycol], 
+    #          ercot_ts$year >= time_window_start() & 
+    #            ercot_ts$year <= time_window_stop())
+    # })
+    # 
+    
+    # TODO: add time selection
     predictors <- eventReactive(input$go, {
-      ercot_ts[,input$xcols]
+      a <- ercot_ts[,input$xcols]
+      a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
+      return(a)
     })
     
     explained <- eventReactive(input$go, {
-      ercot_ts[,input$ycol]
+      # subset(ercot_ts[,input$ycol], 
+      #        ercot_ts$year >= time_window_start() & 
+      #          ercot_ts$year <= time_window_stop())
+      
+      a <- ercot_ts[,input$ycol]
+      a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
+      return(a)
     })
     
     sel_quant <- eventReactive(input$go, {
-      c(0,input$obs[1],input$obs[2])
+      as.numeric(input$obs)
       })
+    
     # cluster_ct <- eventReactive(input$go, {
     #   input$clusters
     # })

@@ -1,4 +1,5 @@
 vars <- names(ercot_ts[,5:89])
+qs <- c(.1, .25, .5, .75, .9, .95)
 
 pageWithSidebar(
     headerPanel('ERCOT Pricing Quantile Analysis Dashboard'),
@@ -41,9 +42,34 @@ pageWithSidebar(
         #                     choices = c(0.1,0.25,0.5,0.75,0.9,0.95), 
         #                     selected = c(0.25, 0.5, 0.75)),
         
-        sliderInput("obs", "Quantiles",
-                    min = 0, max = 1, value = c(0.4, 0.8)
+        pickerInput(
+          inputId = "obs",
+          label = "Quantiles",
+          choices = qs,
+          selected = c(.25, .5, .75, .9),
+          options = list(
+            `actions-box` = TRUE,
+            size = 10,
+            `selected-text-format` = "count > 5"
+          ),
+          multiple = TRUE
         ),
+        
+         sliderInput("date_range", "Pick your year range",
+                     min = 2011, max = 2020, value = c(2011, 2020), sep="", ticks=FALSE
+         ),
+        
+        
+        # airDatepickerInput(
+        #   inputId = "date_range",
+        #   label = "Select range of dates:",
+        #   range = TRUE, 
+        #   value = c("2011-01-01", "2020-12-31"),
+        #   minDate = "2011-01-01",
+        #   maxDate = "2020-12-31",
+        #   view = "years",
+        #   timepicker = TRUE
+        # ),
         
         # dateRangeInput('dateRange',
         #                label = paste('Date range input',
