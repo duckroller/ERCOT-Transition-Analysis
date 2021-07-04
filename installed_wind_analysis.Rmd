@@ -1,63 +1,190 @@
 ---
 title: "Installed Wind Capacity vs. Wind Generation"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+ fig.width = 6, fig.height = 6
+)
+```
 
 Going to use this notebook to look at how installed wind capacity looks as a metric, compared to just straight up wind generation.
 
-```{r}
+```{r clean up, include=FALSE}
+
+rm(list=ls())
+
+```
+
+```{r import, include=FALSE}
 library(readxl)
 library(readr)
 library(ggplot2)
-library(hrbrthemes)
-library("ggpubr")
+library(ggpubr)
+library(lubridate)
+library(GGally)
+library(knitr)
+library(cowplot)
 ```
 
-```{r}
+```{r load data, include=FALSE}
 wind_capacity <- read_excel("data/Capacity_Changes_by_Fuel_Type_Charts_May_2021.xlsx", 
     range = "A74:B97", col_names = c("year", "windcap"))
 
 wind_capacity$windcap <- as.numeric(wind_capacity$windcap)
 
-ercot_dataset <- read_csv("data/ERCOT_Dataset_8June2021.csv")
+ercot_dataset <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
 wind_generation <- data.frame(cbind(year = ercot_dataset$year, month = ercot_dataset$month, 
                                     day = ercot_dataset$day, windgen = ercot_dataset$wind))
 
-wind_gen_annual_sum <- aggregate(windgen ~ year,       # Aggregate data
+wind_gen_annual_sum <- aggregate(windgen ~ year,       
                         wind_generation,
                         FUN = sum)
 
+wind_gen_annual_hourly_mean <- aggregate(windgen ~ year,       
+                        wind_generation,
+                        FUN = mean)
 
 wind_data <- merge(wind_capacity, wind_gen_annual_sum, by = 'year')
 
+
 wind_data$windcap <- as.numeric(wind_data$windcap)
+
+hourly_windgen_timeseries <- cbind.data.frame(datetime = make_datetime(year=ercot_dataset$year, month =  ercot_dataset$month, day = ercot_dataset$day, hour = ercot_dataset$hourstart), windgen = ercot_dataset$wind)
+
+wind_data$last_years_growth <- as.numeric(diff(wind_capacity$windcap[10:20]))
 ```
 
-```{r}
-ggscatter(wind_data, x = "windcap", y = "windgen", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Cumulative Installed Wind Generation Capacity in ERCOT", 
-          ylab = "Annual Wind Generation in ERCOT(MWh)" ) +
-          theme_bw()
+## Data
+
+All data straight from ERCOT - capacity data from their annual capacity changes by fuel type chart, and generation summed annually from their fuel mix report.
+
+```{r echo=FALSE}
+wind_data
+summary(wind_data[2:4])
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=8}
+
+p <- ggplot(hourly_windgen_timeseries, aes(x=datetime, y=windgen)) +
+  geom_point(alpha=0.2, color = "gray") +
+  geom_smooth(color = "red") + 
+  #geom_bar() +
+  xlab("") +
+  ylab("Wind Generation (MWh)") +
+  ggtitle("Hourlyas Wind Generation in ERCOT", subtitle = "Jan 2011 - Dec 2020. Smoothed with a generalized additive model for vizualization. Data: ERCOT")
+
+
+p2 <- ggplot(wind_capacity[12:21,], aes(x = year, y=windcap)) +
+  #geom_point() + 
+  geom_col() +
+  #geom_segment(aes(x=year, xend=year, y=0, yend=windcap)) +
+  xlab("") +
+  ylab("Wind Generation Nameplate Capacity (MW)") +
+  ggtitle("Cumulative Annual Installed Wind Generation Capacity in ERCOT", subtitle = "2011 - 2020. Data: ERCOT") +
+  scale_x_continuous(breaks=2011:2020,labels=2011:2020)
+
+
+p3 <- ggplot(wind_data, aes(x = year, y = last_years_growth)) +
+  #geom_point() + 
+  geom_col() +
+  #geom_segment(aes(x=year, xend=year, y=0, yend=windcap)) +
+  xlab("") +
+  ylab("Wind Generation Nameplate Capacity (MW)") +
+  ggtitle("Annual Installation of Wind Generation Capacity in ERCOT", subtitle = "2011 - 2020. Data: ERCOT") +
+  scale_x_continuous(breaks=2010:2019,labels=2010:2019)
+
+
+p4 <- ggpairs(wind_data, columns = c(2:4),lower=list(continuous="smooth"),diag=list(continuous="densityDiag"))
+
+plot_grid(p, p2, p3, p4, labels = NULL)
+
+p4
+```
+
+
+## Testing for Correlation
+```{r graphs, echo=FALSE, fig.height=5, fig.width=10, message=FALSE, warning=FALSE}
+p5 <- ggscatter(wind_data, x = "last_years_growth", y = "windgen", 
+                add = "reg.line", conf.int = TRUE, 
+                cor.coef = TRUE, cor.method = "pearson",
+                xlab = "Prior Year's growth in windgen Nameplate Capacity (MW) from", 
+                ylab = "Total Annual Wind Generation in ERCOT (MWh)") +
+                theme_bw() +
+                ggtitle("Correlating Wind Generation and Wind Capacity in ERCOT", 
+                        subtitle = "2011 - 2020. Data: ERCOT")
+
+
+p6 <- ggscatter(wind_data, x = "windcap", y = "windgen", 
+                add = "reg.line", conf.int = TRUE, 
+                cor.coef = TRUE, cor.method = "pearson",
+                xlab = "Cumulative Installed Wind Generation Capacity in ERCOT (MW)", 
+                ylab = "Total Annual Wind Generation in ERCOT (MWh)") +
+                theme_bw() +
+                ggtitle("Correlating Wind Generation and Wind Capacity in ERCOT", 
+                        subtitle = "2011 - 2020. Data: ERCOT")
+
+plot_grid(p5, p6, labels = NULL)
+
 
 ```
 
-```{r}
-# Shapiro-Wilk normality test for mpg
+### Normalcy
+
+Let's see if this data is normally distributed before testing for correlation.
+
+```{r echo = FALSE, fig.width=12, fig.height=6}
+p7 <- ggplot(wind_data, aes(sample = windcap)) +
+      stat_qq() + 
+      stat_qq_line() +
+      ggtitle("QQ Plot for Wind Capacity")
+
+p8 <- ggplot(wind_data, aes(sample = windgen)) +
+      stat_qq() + 
+      stat_qq_line() +
+      ggtitle("QQ Plot for Wind Generation")
+
+p9 <- ggplot(wind_data, aes(sample = last_years_growth)) +
+      stat_qq() + 
+      stat_qq_line() +
+      ggtitle("QQ Plot for Annual Wind Capacity Additions")
+
+plot_grid(p7, p8, p9, nrow=1, ncol=3, rel_widths = 5,labels = NULL)
+
+```
+
+
+```{r echo = FALSE}
+# Shapiro-Wilk normality test for wind capacity:
 shapiro.test(wind_data$windcap) # => p = 0.3536
-# Shapiro-Wilk normality test for wt
+# Shapiro-Wilk normality test for summed generation:
 shapiro.test(wind_data$windgen) # => p = 0.2721
+# Shapiro-Wilk normality test for mean hourly generation:
+shapiro.test(wind_data$last_years_growth) # => p = 0.4353
 ```
+
+### Pearson Test
 
 Normally distributed, so we can test for correlation with Pearson.
 
-```{r}
-res <- cor.test(wind_data$windcap, wind_data$windgen, 
+```{r echo = FALSE}
+res1 <- cor.test(wind_data$windcap, wind_data$windgen, 
                     method = "pearson")
-res
+res1
+
+res2 <- cor.test(wind_data$windgen, wind_data$last_years_growth, 
+                    method = "pearson")
+res2
+
 ```
 
-With a p-value of 1.4e-07 and a correlation coefficient of 0.986485, we can conclude generation and capacity are significantly correlated.
+## Conclusion
+
+With a p-value of 1.4e-07 and a correlation coefficient of 0.986485, we can conclude generation and capacity are significantly  linearly correlated.
+
+However, with a p-value of 0.06545 and a correlation coefficient of 0.6021706, annual capacity additions do not significantly linearly correlate with wind generation in ERCOT.
 
 
