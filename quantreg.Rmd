@@ -10,22 +10,31 @@ library(quantreg)
 library(readr)
 library(GGally)
 ```
+
+```{r}
+rm(list=ls())
+```
+
+
 The following adapted from the R Notebook "Tutorial: Quantile Regression using R" by Ibn Abdullah, February 15, 2016
 https://rstudio-pubs-static.s3.amazonaws.com/152505_49d1881e3fe64f0bad072282c36a6ca5.html
 
 ```{r}
-ERCOTData <- read_csv("data/ERCOT_Dataset_8June2021.csv", col_types = cols(DA_awarded_MW_PWRSTR = col_double()),  na.strings = ".")
 ERCOTData <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
 ```
 
 ```{r}
-attach(ERCOTData)
 summary(ERCOTData)
 
 ```
 
 ```{r}
-datatable=data.frame(RTM_price_weighted_Hub, wind, henry, mwh_sys, nuclear, solar)
+datatable=data.frame(rtm_price = ERCOTData$RTM_price_weighted_Hub, 
+                     wind_gen = ERCOTData$wind, 
+                     gas_price = ERCOTData$henry, 
+                     sys_load = ERCOTData$mwh_sys, 
+                     nuclear_gen = ERCOTData$nuclear, 
+                     solar_gen = ERCOTData$solar)
 
 datatable <- na.omit(datatable)
 
@@ -33,23 +42,24 @@ cor(datatable)
 ```
 
 ```{r}
-ggpairs(datatable)
+#ggpairs(datatable)
 
-ggpairs(datatable, alpha=0.75,
-              lower=list(continuous="smooth"),
+ggpairs(datatable, alpha=0.2,
+              lower=list(continuous="smooth", color = "red"),
               #upper=list(continuous="blank"),
               axisLabels="none", switch="both") +
               theme_bw()
-```
-
-```{r}
-Y = cbind(RTM_price_weighted_Hub)
-X = cbind(wind, henry, mwh_sys, nuclear, solar)
 
 ```
 
 ```{r}
-hist(Y, prob=TRUE, col = "blue", border = "black")
+Y = cbind(rtm_price = datatable$rtm_price)
+X = cbind(wind_gen = datatable$wind_gen, gas_price = datatable$gas_price, sys_load = datatable$sys_load, nuclear_gen = datatable$nuclear_gen, solar_gen = datatable$solar_gen)
+
+```
+
+```{r}
+hist(Y, prob=TRUE, col = "blue", border = "black", main = "Real Time Price Histogram")
 lines(density(na.omit(Y)))
 
 ```
@@ -77,7 +87,7 @@ anova(Qreg25, Qreg75)
 ```
 
 ```{r}
-QR=rq(Y~X, tau=c(0.75, 0.90, 0.95, 0.99))
+QR=rq(Y~X, tau=c(0.5, 0.75, 0.85, 0.95))
 
 sumQR=summary(QR)
 ```
@@ -87,7 +97,9 @@ plot(sumQR)
 ```
 
 
+
 ```{r}
+#TODO specify one or more regions rather than just one...
 regional_and_time_regressions <- function(df, time=11, region='ercot', t=c(0.10, 0.25, 0.50, 0.75, 0.90)){
   #'''default time 11 AM, default region is system wide, default quantiles are 0.10, 0.25, 0.50, 0.75, 0.90'''
   attach(df)
@@ -103,19 +115,19 @@ regional_and_time_regressions <- function(df, time=11, region='ercot', t=c(0.10,
   } else if (region=='north') {
     #datatable = data.frame(RTM_price_weighted_north, wind_actual_west_north, henry, NorthLoad, nuclear, solar)
     Y = cbind(RTM_price_weighted_north)
-    X = cbind(wind_actual_west_north, henry, NorthLoad, nuclear, solar)
+    X = cbind(wind_actual_west_north, "rest_of_system_wind" = wind - wind_actual_west_north, henry, NorthLoad, "rest_of_system_load" = mwh_sys - NorthLoad, nuclear, solar)
   } else if (region=='houston') {
     #datatable = data.frame(RTM_price_weighted_houston, wind_actual_south_houston, henry, HouLoad, nuclear, solar)
     Y = cbind(RTM_price_weighted_houston)
-    X = cbind(wind_actual_south_houston, henry, HouLoad, nuclear, solar)
+    X = cbind(wind_actual_south_houston, "rest_of_system_wind" = wind - wind_actual_south_houston, henry, HouLoad, "rest_of_system_load" = mwh_sys - HouLoad, nuclear, solar)
   } else if (region=='south') {
     #datatable = data.frame(RTM_price_weighted_south, wind_actual_south_houston, henry, SOUTHLoad, nuclear, solar)
     Y = cbind(RTM_price_weighted_south)
-    X = cbind(wind_actual_south_houston, henry, SOUTHLoad, nuclear, solar)
+    X = cbind(wind_actual_south_houston, "rest_of_system_wind" = wind - wind_actual_south_houston, henry, SOUTHLoad, "rest_of_system_load" = mwh_sys - SOUTHLoad, nuclear, solar)
   } else if (region=='west') {
     #datatable = data.frame(RTM_price_weighted_west, wind_actual_west_north, henry, WestLoad, nuclear, solar)
     Y = cbind(RTM_price_weighted_west)
-    X = cbind(wind_actual_west_north, henry, WestLoad, nuclear, solar)
+    X = cbind(wind_actual_west_north, "rest_of_system_wind" = wind - wind_actual_west_north, henry, WestLoad, "rest_of_system_load" = mwh_sys - WestLoad, nuclear, solar)
   } else {
     print("give better region name pls")
     break
@@ -140,12 +152,12 @@ regional_and_time_regressions <- function(df, time=11, region='ercot', t=c(0.10,
 detach(ERCOTData)
 
 for (r in c('ercot', 'north', 'west', 'south', 'houston')){
-  for (t in c(11,16)) {
+  for (t in c(4,16)) {
     #print(paste("Quantile Regression for the ",r,"zone at ",t," o'clock."))
-    png(filename = paste("misc_stuff\\graphing_files\\Quantile_Results\\15-18_quantile_", r, "_", t, ".png",sep = ""))
+    png(filename = paste("misc_stuff\\graphing_files\\Quantile_Results\\15-19_quantile_", r, "_", t, ".png",sep = ""))
     par(oma=c(3,3,3,3))
     plot(regional_and_time_regressions(ERCOTData[ERCOTData$year>=2015 & ERCOTData$year<=2019,],region = r, time = t))
-    mtext(paste("Quantile Regression for the ",r,"zone at ",t," o'clock. 2015-2018 data"), outer = TRUE, cex = 1.5, line = 1)
+    mtext(paste("Quantile Regression for the ",r,"zone at ",t," o'clock. 2015-2019 data"), outer = TRUE, cex = 1.5, line = 1)
     dev.off()
   }
 }
@@ -202,7 +214,7 @@ rq(rnorm(50) ~ 1, weights=runif(50),ci=FALSE)  #weighted sample median
 # 	col = c("red","blue"),lty = c(2,1))
 
 
-plot(wind,RTM_price_weighted_Hub,xlab="Wind Generation (MWh)",ylab="RTM Price (Weighted Hub Average, $/MWh)",type = "n", cex=.5)
+plot(log(wind),log(RTM_price_weighted_Hub),xlab="Wind Generation (MWh)",ylab="RTM Price (Weighted Hub Average, $/MWh)",type = "n", cex=.5)
 points(wind,RTM_price_weighted_Hub,cex=.5,col="blue")
 taus <- c(.05,.1,.25,.75,.9,.95)
 xx <- seq(min(na.omit(wind)),max(na.omit(wind)),100)
@@ -211,7 +223,7 @@ yy <- cbind(1,xx)%*%f
 for(i in 1:length(taus)){
         lines(xx,yy[,i],col = "gray")
         }
-abline(lm(RTM_price_weighted_Hub ~ wind),col="red",lty = 2)
+abline(lm(log(RTM_price_weighted_Hub) ~ log(wind)),col="red",lty = 2)
 abline(rq(RTM_price_weighted_Hub ~ wind), col="blue")
 legend(3000,500,c("mean (LSE) fit", "median (LAE) fit"),
 	col = c("red","blue"),lty = c(2,1))
@@ -244,7 +256,7 @@ library(dplyr)
 
 p <- ggplot(datatable, aes(log(wind), log(RTM_price_weighted_Hub))) +
   geom_point(size = 1) +
-  geom_quantile(quantiles = 1:9/10, size = 2, aes(colour = ..quantile..)) +
+  geom_quantile(quantiles = 1:4/5, size = 1, aes(colour = ..quantile..)) +
   scale_alpha(range = c(0.3, 0.7)) +
   geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE)
 
