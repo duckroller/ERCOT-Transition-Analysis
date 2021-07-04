@@ -1,4 +1,3 @@
-library(readxl)
 library(readr)
 library(ggplot2)
 library(dplyr)
@@ -7,7 +6,6 @@ library(GGally)
 library(RColorBrewer)
 library(shinyWidgets)
 library(tidyr)
-library(zoo)
 library(quantreg)
 
 

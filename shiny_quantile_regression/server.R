@@ -1,107 +1,98 @@
 function(input, output, session) {
     
-    cleanedData <- reactive({
-      
-    })
-    
-    # algo_choice <- eventReactive(input$go, {
-    #   input$algo
-    # })
-  
-    # TODO: just do it all in here lmao
-    # pull name lists
-    # cbind up a temp df, but include year etc
-    # maybe gets bundled with the quantile crunching method too
-    # # lets me do progress bar stuff
-    # 
-    # Combine the selected variables into a new data frame
-     selected_data <- eventReactive(input$go, {
-         cbind("Y" = explained(), predictors())#ercot_ts[, c(input$xcols, input$ycol)]
-     })
-     
-    
-    time_window_start <- eventReactive(input$go, {
-      input$date_range[1]
-    })
-    
-    time_window_stop <- eventReactive(input$go, {
-      input$date_range[2]
-    })
-    
-    
-    # TODO: add time selection
-    # predictors <- eventReactive(input$go, {
-    #   subset(ercot_ts[,input$xcols], 
-    #          ercot_ts$year >= time_window_start() & 
-    #            ercot_ts$year <= time_window_stop())
-    # })
-    # 
-    # explained <- eventReactive(input$go, {
-    #   subset(ercot_ts[,input$ycol], 
-    #          ercot_ts$year >= time_window_start() & 
-    #            ercot_ts$year <= time_window_stop())
-    # })
-    # 
-    
-    # TODO: add time selection
-    predictors <- eventReactive(input$go, {
-      a <- ercot_ts[,input$xcols]
-      a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
-      return(a)
-    })
-    
-    explained <- eventReactive(input$go, {
-      # subset(ercot_ts[,input$ycol], 
-      #        ercot_ts$year >= time_window_start() & 
-      #          ercot_ts$year <= time_window_stop())
-      
-      a <- ercot_ts[,input$ycol]
-      a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
-      return(a)
-    })
-    
-    sel_quant <- eventReactive(input$go, {
-      as.numeric(input$obs)
-      })
-    
-    # cluster_ct <- eventReactive(input$go, {
-    #   input$clusters
-    # })
-     
-    # clusters <- eventReactive(input$go, {
-    #   if(algo_choice() == "K-Means Clustering"){
-    #     kmeans(selectedData(), cluster_ct(), nstart = 25, iter.max = 20)
-    #   } else {
-    #     #hcut(selectedData(), cluster_ct())
-    #     hclust(dist(scale(selectedData())))
-    #   }
-    # })
-    
-    # TODO: custom quantiles for tau argument
-    quantiles <- eventReactive(input$go, {
-      rq(Y~., data=selected_data(), tau=sel_quant())
-    })
-    
-    tabling <- eventReactive(input$go,{
-      if(algo_choice() == "K-Means Clustering"){
-        data.frame(cluster = as.factor(clusters()$cluster), selectedData())
-      } else {
-        data.frame(data.frame(cluster=as.factor(cutree(clusters(), k = cluster_ct()))), selectedData())
-        #data.frame(cluster = clusters()$cluster, selectedData())
+    quantile_regression <- eventReactive(input$go, { 
+      withProgress(message = "Selecting data...", {
+        
+        # first, let's trim our df to the time selected
+        
+        a <- ercot_ts
+        a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
+        a <- a[is.element(a$hourstart, input$hour_of_day), ]
+        a <- a[is.element(a$month, input$month_choice), ]
+        
+        # now let's pull our variable columns into their own vectors
+        X <- as.matrix(a[ ,input$xcols])
+        Y <- a[ ,input$ycol]
+        
+        t <- as.numeric(input$quantiles)
+        
+        incProgress(amount=0.25, 
+                    message="Regressing...", 
+                    detail = paste("On ", as.character(input$ycol), 
+                                   ", using ", as.character(input$xcols),
+                                   " for the quantiles ", as.character(input$quantiles), ".",
+                                   sep=""))
+        
+        # perform regression
+        if(input$transform == "Natural Log") {
+          print(log(Y))
+          print(log(X))
+          QR <- rq(log(Y)~log(X),tau = t)
+        } else if(input$transform == "Scale") {
+          QR <- rq(scale(Y)~scale(X),tau = t)
+        } else {
+          QR <- rq(Y~X,tau = t)
         }
+        
+      }  
+      
+      )
+        return(QR)
+    
     })
     
-    output$table <- DT::renderDataTable({
-        tabling()
+    quantile_summary <- eventReactive(input$go, {
+      withProgress(message = "Summarizing model...", {
+        sumQR <- summary(quantile_regression())
+        
+        return(sumQR)
+      })
     })
+    
+
+    
+    output$quantile_plot <- renderPlot({
+      print(quantile_summary())
+      plot(quantile_summary())#, se = "boot")
+    })
+
+ 
+    # tabling <- eventReactive(input$go,{
+    #   if(algo_choice() == "K-Means Clustering"){
+    #     data.frame(cluster = as.factor(clusters()$cluster), selectedData())
+    #   } else {
+    #     data.frame(data.frame(cluster=as.factor(cutree(clusters(), k = cluster_ct()))), selectedData())
+    #     #data.frame(cluster = clusters()$cluster, selectedData())
+    #     }
+    # })
+    
+    # output$table <- DT::renderDataTable({
+    #     tabling()
+    # })
     
     output$intro_text <-  output$text2 <- renderUI({
       HTML(' <br>')
     })
     
-    output$quantile_plot <- renderPlot({
-      withProgress(plot(summary(quantiles(), se = "boot")))
+    output$selected_var1 <- renderText({ 
+      input$ycol
     })
+    output$selected_var2 <- renderText({ 
+      input$xcols
+    })
+    output$selected_var3 <- renderText({ 
+      input$date_range
+    })
+    output$selected_var4 <- renderText({ 
+      input$month_choice
+    })
+    output$selected_var5 <- renderText({ 
+      input$hour_of_day
+    })
+    output$selected_var6 <- renderText({ 
+      input$quantiles
+    })
+
     
     output$plot1 <- renderPlot({
       if(algo_choice() == "K-Means Clustering"){

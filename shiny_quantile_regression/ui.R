@@ -1,5 +1,5 @@
 vars <- names(ercot_ts[,5:89])
-qs <- c(.1, .25, .5, .75, .9, .95)
+qs <- c(.1, .25, .5, .75, .9 ,.95)
 
 pageWithSidebar(
     headerPanel('ERCOT Pricing Quantile Analysis Dashboard'),
@@ -7,11 +7,6 @@ pageWithSidebar(
         helpText("Figure it out bozo"),
         actionButton("go", "Quantilize!"),
         hr(),
-        #selectInput('algo', 'Clustering Method', c("K-Means Clustering", "Hierarchical Clustering")),
-        #numericInput('clusters', 'Cluster count', 3, min = 1, max = 9),
-        #hr(),
-        #selectInput('xcol', 'X Variable', vars, selected = vars[[12]]),
-        # selectInput('ycol', 'Y Variable', vars),
         pickerInput(
             inputId = "ycol",
             label = "Select explained variable",
@@ -36,14 +31,8 @@ pageWithSidebar(
             ),
             multiple = TRUE
         ),
-        
-        # checkboxGroupInput(inputId = "quant_choice", 
-        #                     label = "Select qunatiles to evaluate", 
-        #                     choices = c(0.1,0.25,0.5,0.75,0.9,0.95), 
-        #                     selected = c(0.25, 0.5, 0.75)),
-        
         pickerInput(
-          inputId = "obs",
+          inputId = "quantiles",
           label = "Quantiles",
           choices = qs,
           selected = c(.25, .5, .75, .9),
@@ -54,61 +43,54 @@ pageWithSidebar(
           ),
           multiple = TRUE
         ),
-        
+        pickerInput(
+          inputId = "hour_of_day",
+          label = "Choose which hour(s) to regress upon (24 hour format)",
+          choices = c(1:24),
+          selected = 16,
+          options = list(
+            `actions-box` = TRUE,
+            size = 10,
+            `selected-text-format` = "count > 5"
+          ),
+          multiple = TRUE
+        ),
+        pickerInput(
+          inputId = "month_choice",
+          label = "Choose which months to regress upon",
+          choices = c(1:12),
+          selected = c(1:12),
+          options = list(
+            `actions-box` = TRUE,
+            size = 10,
+            `selected-text-format` = "count > 3"
+          ),
+          multiple = TRUE
+        ),
          sliderInput("date_range", "Pick your year range",
                      min = 2011, max = 2020, value = c(2011, 2020), sep="", ticks=FALSE
          ),
+        radioButtons("transform", "Transform data?", c("No", "Natural Log", "Scale"),
+                     selected = "No"), 
         
         
-        # airDatepickerInput(
-        #   inputId = "date_range",
-        #   label = "Select range of dates:",
-        #   range = TRUE, 
-        #   value = c("2011-01-01", "2020-12-31"),
-        #   minDate = "2011-01-01",
-        #   maxDate = "2020-12-31",
-        #   view = "years",
-        #   timepicker = TRUE
-        # ),
         
-        # dateRangeInput('dateRange',
-        #                label = paste('Date range input',
-        #                              'yyy/mm/dd week starts on day 1 (Monday),',
-        #                              'separator is "-", start view is year'),
-        #                start = ercot_ts$Date[1], end = ercot_ts$Date[-1],
-        #                min = ercot_ts$Date[1], max = ercot_ts$Date[-1],
-        #                separator = " - ", format = "yyyy-mm-dd",
-        #                startview = 'year', weekstart = 1),
-        
-
-
-        #verbatimTextOutput('selected_states'),
-        #selectInput('state_choice', 'States', state.name, multiple=TRUE, selectize=FALSE),
-        #tags$head(tags$style(HTML('#state_choice{overflow-y: scroll;height: 16em;}'))),
-        #tags$h3("States to Cluster"),
-        # pickerInput(
-        #         inputId = "state_choice",
-        #         label = "Select States to Cluster",
-        #         choices = state.name,
-        #         selected = state.name,
-        #         options = list(
-        #             `actions-box` = TRUE,
-        #             size = 10,
-        #             `selected-text-format` = "count > 3"
-        #         ),
-        #         multiple = TRUE
-        # ),
-            #checkboxGroupInput("state_choice", 
-             #                  label = NULL, 
-              #                 choices = state.name,
-               #                selected = state.name,
-                #               ),
-        
-        #downloadButton("downloadData", "Download Cluster Table"),
         
     width = 3),
     mainPanel(
-        plotOutput('quantile_plot')
+        plotOutput('quantile_plot'),
+        renderText("Explained: "),
+        textOutput("selected_var1"),
+        renderText("Explanatory: "),
+        textOutput("selected_var2"),
+        renderText("Year Range: "),
+        textOutput("selected_var3"),
+        renderText("Months: "),
+        textOutput("selected_var4"),
+        renderText("Hour(s): "),
+        textOutput("selected_var5"),
+        renderText("Quantiles: "),
+        textOutput("selected_var6")
         #plotOutput('plot1'),
         #plotOutput('plot2'),
         #plotOutput('ggpairsplot'),
