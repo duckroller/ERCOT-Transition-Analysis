@@ -1,0 +1,97 @@
+---
+title: "Statistical Analysis of ERCOT Dataset"
+output: html_notebook
+---
+
+```{r}
+rm(list=ls())
+```
+
+
+```{r}
+library(readr)
+library(pastecs)
+library(zoo)
+library(lubridate)
+library(ggplot2)
+library(psych)
+library(tseries) 
+```
+
+```{r}
+ercot_dataset <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
+```
+
+```{r}
+summary(ercot_dataset$RTM_price_weighted_houston)
+stat.desc(ercot_dataset$RTM_price_weighted_Hub, basic=F)
+
+
+stat.desc(ercot_dataset$coal)
+```
+
+
+```{r}
+just_prices <- as.data.frame(cbind("rtm_hub" = ercot_dataset$RTM_price_weighted_Hub, "rtm_north" = ercot_dataset$RTM_price_weighted_north, "rtm_south" = ercot_dataset$RTM_price_weighted_south, "rtm_west" = ercot_dataset$RTM_price_weighted_west, "rtm_houston" = ercot_dataset$RTM_price_weighted_houston, "dam_houston" = ercot_dataset$DAM_price_LZ_HOUSTON, "dam_north" = ercot_dataset$DAM_price_LZ_NORTH, "dam_south" = ercot_dataset$DAM_price_LZ_SOUTH, "dam_west" = ercot_dataset$DAM_price_LZ_WEST))#, hourstart = ercot_dataset$hourstart))
+#dt <- seq(as.POSIXct("2011-1-1 0:00", tz="America/Chicago", isdst=TRUE), as.POSIXct("2020-12-31 24:00", tz="America/Chicago", isdst=TRUE), by = "hour")
+
+dt <- as.POSIXct(paste(ercot_dataset$year, "-", ercot_dataset$month, "-", ercot_dataset$day, " ", ercot_dataset$hourstart, sep=''), format="%Y-%m-%d %H", tz="America/Chicago", isdst=TRUE)
+
+
+ts <- zoo(just_prices, dt)
+
+ts2 <- zoo(ercot_dataset, dt)
+
+# seven NA filled rows at the end here...
+
+ts <- head(ts, -7)
+
+```
+
+```{r}
+
+tail(ts, 15)
+
+melt_zoo <- fortify.zoo(ts, melt = TRUE, names = c("Date", "Series", "Price ($/MWh)"))
+```
+
+```{r}
+autoplot(ts) + ggtitle("ERCOT Zonal Prices, RTM and DAM",subtitle = "Hourly Data, 2011-2020. Data: ERCOT") + scale_x_datetime(name="Date")
+```
+
+```{r}
+describe(ts)
+```
+
+
+```{r}
+
+
+
+for (i in colnames(ts)){
+  adf <- adf.test(na.omit(ts[[i]]))
+  pp <- pp.test(na.omit(ts[[i]]))
+  kpss <- kpss.test(na.omit(ts[[i]]))
+}
+
+
+adfs <- sapply(na.omit(ts), adf.test)
+pps <- sapply(na.omit(ts), pp.test)
+kpsss <- sapply(na.omit(ts), kpss.test)
+
+table(adfs)
+
+```
+
+```{r}
+#tail(ts2, 15)
+```
+
+```{r}
+ts2 <- head(ts2, -7)
+
+write.zoo(ts2, file="data/Cleaned Data/ercot_dataset_zoo.csv", index.name = "Date", sep=",")
+
+ts3 <- ts2[where(ts2$)]
+```
+
