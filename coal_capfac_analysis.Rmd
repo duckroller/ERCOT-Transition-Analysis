@@ -1,0 +1,61 @@
+---
+title: "Coal Capacity Factor Analysis"
+author: "Eli Ramthun"
+date: "7/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import, include=FALSE}
+library(readxl)
+library(readr)
+
+library(zoo)
+
+```
+
+```{r}
+ercot_data <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
+egrid_data <- read_csv("data/eGRID_files/eGRID_ercot.csv")
+egrid_data <- egrid_data[egrid_data$fuel_type == "coal" & egrid_data$year >= 2011, ]
+
+existcapacity_annual <- read_excel("data/existcapacity_annual_filtered.xlsx", 
+    sheet = "texas_coal_electric_power", 
+    col_types = c("numeric", "skip", "skip", 
+        "skip", "skip", "skip", "numeric", 
+        "skip"))
+
+colnames(existcapacity_annual) <- c("year", "nameplate_cap")
+
+annual_mean_coal_capfac <- aggregate(capacity_factor ~ year, 
+                                     data=egrid_data, 
+                                     mean)
+
+annual_sum_coal_generation <- aggregate(coal ~ year,
+                                    data=ercot_data,
+                                    sum)
+
+```
+
+
+```{r}
+
+gen_and_cap <- merge(annual_sum_coal_generation, existcapacity_annual, by = "year")
+
+gen_and_cap$calculated_cf <- (gen_and_cap$coal/8760) / gen_and_cap$nameplate_cap
+
+
+```
+
+```{r}
+z <- read.zoo(gen_and_cap, FUN = as.numeric)
+
+m <- na.approx(merge(z, zoo(, c(kronecker(time(z), 0:11/12, "+")))))
+time(m) <- as.Date(as.yearmon(time(m)), frac = 1)
+
+plot(m)
+```
+
