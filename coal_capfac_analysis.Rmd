@@ -12,9 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r import, include=FALSE}
 library(readxl)
 library(readr)
-
+library(ggplot2)
 library(zoo)
-
+library(quantreg)
+library(GGally)
 ```
 
 ```{r}
@@ -38,24 +39,74 @@ annual_sum_coal_generation <- aggregate(coal ~ year,
                                     data=ercot_data,
                                     sum)
 
+monthly_sum_coal_generation <- aggregate(coal ~ year + month, data=ercot_data, sum)
+
+monthly_sum_generation <- aggregate(cbind(coal,wind,gas,nuclear,solar) ~ year + month, data=ercot_data, sum)
+
+generation_ts <- zoo(monthly_sum_generation, order.by = yearmon(monthly_sum_generation$year+(monthly_sum_generation$month-1)/12))
+
+
+
+#goal_gen_ts <- zoo(monthly_sum_coal_generation, order.by = yearmon(monthly_sum_coal_generation$year+(monthly_sum_coal_generation$month-1)/12))
+# 
+# ercot_ts <- read.zoo(head(ercot_data, -3), )
+# 
+# ercot_ts <-  read.zoo(head(ercot_data, -3), FUN = as.yearmon, aggregate = mean, na)
+# fortify.zoo(Mean)
+
+#monthly_sum_coal_generation <- aggregate(coal ~)
+
 ```
 
 
 ```{r}
 
-gen_and_cap <- merge(annual_sum_coal_generation, existcapacity_annual, by = "year")
+#gen_and_cap <- merge(annual_sum_coal_generation, existcapacity_annual, by = "year")
 
-gen_and_cap$calculated_cf <- (gen_and_cap$coal/8760) / gen_and_cap$nameplate_cap
+#gen_and_cap$calculated_cf <- (gen_and_cap$coal/8760) / gen_and_cap$nameplate_cap
 
 
 ```
 
 ```{r}
-z <- read.zoo(gen_and_cap, FUN = as.numeric)
+z <- read.zoo(existcapacity_annual, FUN = as.numeric)
 
 m <- na.approx(merge(z, zoo(, c(kronecker(time(z), 0:11/12, "+")))))
 time(m) <- as.Date(as.yearmon(time(m)), frac = 1)
+time(generation_ts) <- as.Date(time(generation_ts), frac= 1)
+n <- merge(m, generation_ts)
+colnames(n)[1] <- "coal_capacity"
+#napkin math - ~730.5 hours per month to convert from MWh to MW
+n$coal_cf <- (n$coal/730.5)/n$coal_capacity
 
-plot(m)
+n$year <- as.factor(n$year)
+n$month <- as.factor(n$month)
 ```
 
+Data aggregated, let's plot it for sanity:
+
+```{r}
+autoplot(na.omit(scale(n)))
+```
+
+```{r}
+ggpairs(n)
+```
+
+```{r}
+
+n <- na.omit(n)
+
+scaled_ts <- scale(n)
+
+Y = cbind(scaled_ts$coal_cf)
+X = cbind(scaled_ts$wind, scaled_ts$gas, scaled_ts$nuclear, scaled_ts$solar)
+
+QR=rq(Y~X, tau=c(0.1, 0.25, 0.5, 0.75, 0.85, 0.95))
+
+sumQR=summary(QR)
+```
+
+```{r}
+plot(sumQR)
+```
