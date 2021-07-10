@@ -1,5 +1,5 @@
 vars <- names(ercot_ts[,5:89])
-qs <- c(.1, .25, .5, .75, .9 ,.95)
+qs <- c(.1, .25, .5, .75, .9 ,.95, .99,1)
 
 pageWithSidebar(
     headerPanel('ERCOT Pricing Quantile Analysis Dashboard'),
@@ -68,7 +68,7 @@ pageWithSidebar(
           multiple = TRUE
         ),
          sliderInput("date_range", "Pick your year range",
-                     min = 2011, max = 2020, value = c(2011, 2020), sep="", ticks=FALSE
+                     min = 2011, max = 2020, value = c(2013, 2015), sep="", ticks=FALSE
          ),
         radioButtons("transform", "Transform data?", c("No", "Natural Log", "Scale"),
                      selected = "No"), 
@@ -90,10 +90,11 @@ pageWithSidebar(
         renderText("Hour(s): "),
         textOutput("selected_var5"),
         renderText("Quantiles: "),
-        textOutput("selected_var6")
+        textOutput("selected_var6"),
         #plotOutput('plot1'),
         #plotOutput('plot2'),
-        #plotOutput('ggpairsplot'),
+        plotOutput('ggpairsplot'),
+        plotOutput('quantile_plot2')
         # fluidRow(
         #     splitLayout(cellArgs = list(style = "overflow-x: hidden;"),
         #                 plotOutput('plot3'),

@@ -1,14 +1,29 @@
 function(input, output, session) {
     
+  
+    selected_data <- eventReactive(input$go,  {
+      
+      a <- ercot_ts
+      a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
+      a <- a[is.element(a$hourstart, input$hour_of_day), ]
+      a <- a[is.element(a$month, input$month_choice), ]
+      
+      return(a)
+      
+      
+    })
+  
     quantile_regression <- eventReactive(input$go, { 
       withProgress(message = "Selecting data...", {
         
         # first, let's trim our df to the time selected
         
-        a <- ercot_ts
-        a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
-        a <- a[is.element(a$hourstart, input$hour_of_day), ]
-        a <- a[is.element(a$month, input$month_choice), ]
+        # a <- ercot_ts
+        # a <- subset(a, a$year >= input$date_range[1] & a$year <= input$date_range[2])
+        # a <- a[is.element(a$hourstart, input$hour_of_day), ]
+        # a <- a[is.element(a$month, input$month_choice), ]
+        
+        a <- selected_data()
         
         # now let's pull our variable columns into their own vectors
         X <- as.matrix(a[ ,input$xcols])
@@ -43,28 +58,80 @@ function(input, output, session) {
     
     quantile_summary <- eventReactive(input$go, {
       withProgress(message = "Summarizing model...", {
-        sumQR <- summary(quantile_regression())
+        sumQR <- summary(quantile_regression(), se="boot")
         
         return(sumQR)
       })
     })
     
-
-    
     output$quantile_plot <- renderPlot({
       print(quantile_summary())
       plot(quantile_summary())#, se = "boot")
     })
+    
+    output$quantile_plot2 <- renderPlot({
+      
+      
+      t <- tabling()
+      #plot(quantile_summary())#, se = "boot")
+      p <- ggplot(t, aes(t[,2], t[,1])) +
+        geom_point(size = 1) +
+        geom_quantile(quantiles = as.numeric(input$quantiles), size = 2, aes(colour = ..quantile..)) +
+        scale_alpha(range = c(0.3, 0.7)) +
+        geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE)
+      
+      p
+      })
+    
+    output$ggpairsplot <- renderPlot({
+      
+      dat <- tabling()
+      explained <- as.numeric(dat[,1])
+      #quants <- quantile(dat[,1], input$quantiles)
+     # dat$quant <- with(dat, factor(ifelse(dat[,1] < quants[1], 0, 
+    #                                       ifelse(dat[,1] < quants[2], 1, 2))))
+      
+      #print(explained)
+      print(quantile(as.numeric(explained),as.numeric(input$quantiles)))
+      
+      dat$quant <- cut(explained,quantile(as.numeric(dat$Y),as.numeric(input$quantiles)))
+      
+      print(names(dat))
+      print(dat[, names(dat) != "quant"])
+      
+      q_plotting <- function(data, mapping){
+        ggplot(data = data, mapping = mapping)+
+          #geom_quantile(quantiles = as.numeric(input$quantiles),  aes(colour = quant)) +
+          geom_point(aes(colour = quant)) +
+          geom_smooth(method="lm",aes(colour = quant)) 
+          #scale_x_continuous(limits = c(-1.5,1.5))+
+          #scale_y_continuous(limits = c(-1.5,1.5))
+      }
+      
+      pairs <- ggpairs(dat, 
+                       columns = names(dat[, names(dat) != "quant"]),
+                       #mapping=ggplot2::aes(colour = quant),
+                       #mapping=ggplot2::aes(colour = cut(explained,quantile(explained,input$quantiles)),alpha=0.75),
+                       upper=list(continuous=wrap(q_plotting)),#"smooth"),
+                      #upper=list(continuous="blank"),
+                       axisLabels="none", switch="both") + 
+              theme_bw() #+ 
+             # scale_color_manual(values=cbPalette) + 
+              #scale_fill_manual(values=cbPalette)
+     
+      pairs$nrow <- 1
+      pairs$yAxisLabels <- input$ycol
+      return(pairs)
+    })
+    
+    
 
  
-    # tabling <- eventReactive(input$go,{
-    #   if(algo_choice() == "K-Means Clustering"){
-    #     data.frame(cluster = as.factor(clusters()$cluster), selectedData())
-    #   } else {
-    #     data.frame(data.frame(cluster=as.factor(cutree(clusters(), k = cluster_ct()))), selectedData())
-    #     #data.frame(cluster = clusters()$cluster, selectedData())
-    #     }
-    # })
+    tabling <- eventReactive(input$go,{
+        X <- selected_data()[ ,input$xcols]
+        Y <- selected_data()[ ,input$ycol]
+        return(data.frame(cbind(Y,X)))
+     })
     
     # output$table <- DT::renderDataTable({
     #     tabling()
@@ -197,15 +264,7 @@ function(input, output, session) {
       c_map
     })
     
-    output$ggpairsplot <- renderPlot({
-      ggpairs(tabling(), mapping=ggplot2::aes(colour = as.factor(cluster), alpha=0.75),
-              lower=list(continuous="smooth"),
-              upper=list(continuous="blank"),
-              axisLabels="none", switch="both") +
-        theme_bw() +
-       scale_color_manual(values=cbPalette) +
-        scale_fill_manual(values=cbPalette)
-    })
+  
     
     output$downloadData <- downloadHandler(
         filename = function() {
