@@ -1,6 +1,8 @@
 ---
 title: "ERCOT Quantic Regression"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 
@@ -9,6 +11,8 @@ output: html_notebook
 library(quantreg)
 library(readr)
 library(GGally)
+library(broom)
+library(stargazer)
 ```
 
 ```{r}
@@ -24,8 +28,7 @@ ERCOTData <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
 ```
 
 ```{r}
-summary(ERCOTData)
-
+stargazer(ERCOTData[ ,10:89], type="text")
 ```
 
 ```{r}
@@ -44,11 +47,11 @@ cor(datatable)
 ```{r}
 #ggpairs(datatable)
 
-ggpairs(datatable, alpha=0.2,
-              lower=list(continuous="smooth", color = "red"),
-              #upper=list(continuous="blank"),
-              axisLabels="none", switch="both") +
-              theme_bw()
+# ggpairs(datatable, alpha=0.2,
+#               lower=list(continuous="smooth", color = "red"),
+#               #upper=list(continuous="blank"),
+#               axisLabels="none", switch="both") +
+#               theme_bw()
 
 ```
 
@@ -87,13 +90,13 @@ anova(Qreg25, Qreg75)
 ```
 
 ```{r}
-QR=rq(Y~X, tau=c(0.5, 0.75, 0.85, 0.95))
+#QR=rq(Y~X, tau=c(0.5, 0.75, 0.85, 0.95))
 
-sumQR=summary(QR)
+#sumQR=summary(QR, se="boot")
 ```
 
 ```{r}
-plot(sumQR)
+#plot(sumQR)
 ```
 
 
@@ -137,7 +140,7 @@ regional_and_time_regressions <- function(df, time=11, region='ercot', t=c(0.10,
 
   QR=rq(Y~X, tau=t)
 
-  sumQR=summary(QR)
+  sumQR=summary(QR, se="boot")
   
   return(sumQR)
 
@@ -149,7 +152,6 @@ regional_and_time_regressions <- function(df, time=11, region='ercot', t=c(0.10,
 
 ```{r}
 
-detach(ERCOTData)
 
 for (r in c('ercot', 'north', 'west', 'south', 'houston')){
   for (t in c(4,16)) {
@@ -276,7 +278,7 @@ west_6pm_datatable <- na.omit(west_6pm_datatable)
 
 p <- ggplot(west_6pm_datatable, aes(log(wind_actual_west_north), log(RTM_price_weighted_west))) +
   geom_point(size = 1) +
-  geom_quantile(quantiles = 1:9/10, size = 2, aes(colour = ..quantile..)) +
+  geom_quantile(quantiles = 1:19/20, size = 2, aes(colour = ..quantile..)) +
   scale_alpha(range = c(0.3, 0.7)) +
   geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE)
 
@@ -287,3 +289,177 @@ p
 detach(ERCOTData[ERCOTData$hourstart==18,])
 ```
 
+```{r}
+library(jtools)
+```
+
+```{r}
+Y = cbind(rtm_price = datatable$rtm_price)
+X = cbind(wind_gen = datatable$wind_gen, gas_price = datatable$gas_price, sys_load = datatable$sys_load, nuclear_gen = datatable$nuclear_gen, solar_gen = datatable$solar_gen)
+```
+
+```{r}
+OLSreg=lm(Y~X)
+Qreg=rq(Y~X, tau = c(1))
+```
+
+```{r}
+summ(OLSreg)
+summ(Qreg, se = "boot")
+```
+
+Now I'm going to replicate and expand on the results from Rudolph et al. (2021)
+
+I'll start by whipping up some dataframes...
+
+```{r}
+
+north_zone_df <- data.frame(cbind(price = log(ERCOTData$RTM_price_weighted_north), year = ERCOTData$year, month = ERCOTData$month, day = ERCOTData$day, hour = ERCOTData$hourstart, nuclear = log(ERCOTData$nuclear), wind = log(ERCOTData$wind), solar = log(ERCOTData$solar), gas_price = log(ERCOTData$henry), local_load = log(ERCOTData$NorthLoad), rest_of_system_load = log((ERCOTData$mwh_sys - ERCOTData$NorthLoad))))
+
+houston_zone_df <- data.frame(cbind(price = log(ERCOTData$RTM_price_weighted_houston), year = ERCOTData$year, month = ERCOTData$month, day = ERCOTData$day, hour = ERCOTData$hourstart, nuclear= log(ERCOTData$nuclear), wind = log(ERCOTData$wind), solar = log(ERCOTData$solar), gas_price = log(ERCOTData$henry), local_load = log(ERCOTData$HouLoad), rest_of_system_load = log((ERCOTData$mwh_sys - ERCOTData$HouLoad))))
+
+west_zone_df <- data.frame(cbind(price = log(ERCOTData$RTM_price_weighted_west), year = ERCOTData$year, month = ERCOTData$month, day = ERCOTData$day, hour = ERCOTData$hourstart, nuclear = log(ERCOTData$nuclear), wind = log(ERCOTData$wind), solar = log(ERCOTData$solar), gas_price = log(ERCOTData$henry), local_load = log(ERCOTData$WestLoad), rest_of_system_load = log((ERCOTData$mwh_sys - ERCOTData$WestLoad))))
+
+
+north_zone_df[sapply(north_zone_df, simplify = 'matrix', is.infinite)] <- 0
+west_zone_df[sapply(west_zone_df, simplify = 'matrix', is.infinite)] <- 0
+houston_zone_df[sapply(houston_zone_df, simplify = 'matrix', is.infinite)] <- 0
+
+```
+
+Now that we have our data, let's make some models.
+
+```{r}
+
+annual_north_qrs <- lapply(split(north_zone_df,north_zone_df$year), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+annual_houston_qrs <- lapply(split(houston_zone_df,houston_zone_df$year), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+annual_west_qrs <- lapply(split(west_zone_df,west_zone_df$year), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+
+monthly_north_qrs <- lapply(split(north_zone_df,north_zone_df$month), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+monthly_houston_qrs <- lapply(split(houston_zone_df,houston_zone_df$month), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+monthly_west_qrs <- lapply(split(west_zone_df,west_zone_df$month), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+hourly_north_qrs <- lapply(split(north_zone_df,north_zone_df$hour), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+hourly_houston_qrs <- lapply(split(houston_zone_df,houston_zone_df$hour), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+hourly_west_qrs <- lapply(split(west_zone_df,west_zone_df$hour), 
+                           function(x) rq(x$price ~ ., 
+                                          data = x[ ,6:11], 
+                                          tau = c(.1, .25, .5, .75, .9)))
+
+
+```
+
+Annual Summaries
+
+```{r}
+for (i in names(annual_north_qrs)) {
+    modeli <- annual_north_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "annual_north_quantreg_", i, ".csv", sep = ""))
+}
+
+for (i in names(annual_houston_qrs)) {
+    modeli <- annual_houston_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "annual_houston_quantreg_", i, ".csv", sep = ""))
+}
+
+for (i in names(annual_west_qrs)) {
+    modeli <- annual_west_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "annual_west_quantreg_", i, ".csv", sep = ""))
+}
+```
+
+Monthly Summaries
+
+```{r}
+for (i in names(monthly_north_qrs)) {
+    modeli <- monthly_north_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "monthly_north_quantreg_", i, ".csv", sep = ""))
+}
+
+for (i in names(monthly_houston_qrs)) {
+    modeli <- monthly_houston_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "monthly_houston_quantreg_", i, ".csv", sep = ""))
+}
+
+for (i in names(monthly_west_qrs)) {
+    modeli <- monthly_west_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "monthly_west_quantreg_", i, ".csv", sep = ""))
+}
+```
+
+Hourly Summaries
+
+```{r}
+for (i in names(hourly_north_qrs)) {
+    modeli <- hourly_north_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "hourly_north_quantreg_", i, ".csv", sep = ""))
+}
+
+for (i in names(hourly_houston_qrs)) {
+    modeli <- hourly_houston_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "hourly_houston_quantreg_", i, ".csv", sep = ""))
+}
+
+for (i in names(hourly_west_qrs)) {
+    modeli <- hourly_west_qrs[[i]]
+    tidy_qr <- tidy(modeli)
+    write.csv(tidy_qr, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+                            "hourly_west_quantreg_", i, ".csv", sep = ""))
+}
+```
