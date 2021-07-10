@@ -7,7 +7,6 @@ output: html_notebook
 rm(list=ls())
 ```
 
-
 ```{r}
 library(readr)
 library(pastecs)
@@ -16,11 +15,22 @@ library(lubridate)
 library(ggplot2)
 library(psych)
 library(tseries) 
+
+library(ggridges)
+library(ggplot2)
+library(viridis)
+library(hrbrthemes)
 ```
 
 ```{r}
 ercot_dataset <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
 ```
+
+```{r}
+
+```
+
+
 
 ```{r}
 summary(ercot_dataset$RTM_price_weighted_houston)
@@ -29,7 +39,6 @@ stat.desc(ercot_dataset$RTM_price_weighted_Hub, basic=F)
 
 stat.desc(ercot_dataset$coal)
 ```
-
 
 ```{r}
 just_prices <- as.data.frame(cbind("rtm_hub" = ercot_dataset$RTM_price_weighted_Hub, "rtm_north" = ercot_dataset$RTM_price_weighted_north, "rtm_south" = ercot_dataset$RTM_price_weighted_south, "rtm_west" = ercot_dataset$RTM_price_weighted_west, "rtm_houston" = ercot_dataset$RTM_price_weighted_houston, "dam_houston" = ercot_dataset$DAM_price_LZ_HOUSTON, "dam_north" = ercot_dataset$DAM_price_LZ_NORTH, "dam_south" = ercot_dataset$DAM_price_LZ_SOUTH, "dam_west" = ercot_dataset$DAM_price_LZ_WEST))#, hourstart = ercot_dataset$hourstart))
@@ -63,7 +72,6 @@ autoplot(ts) + ggtitle("ERCOT Zonal Prices, RTM and DAM",subtitle = "Hourly Data
 describe(ts)
 ```
 
-
 ```{r}
 
 
@@ -91,7 +99,4 @@ table(adfs)
 ts2 <- head(ts2, -7)
 
 write.zoo(ts2, file="data/Cleaned Data/ercot_dataset_zoo.csv", index.name = "Date", sep=",")
-
-ts3 <- ts2[where(ts2$)]
 ```
-
