@@ -82,3 +82,19 @@ electric_price_arima <- auto.arima(daily_data_zoo[,10])
 checkresiduals(electric_price_arima)
 ```
 
+```{r}
+ercot_data <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
+```
+
+
+```{r}
+# calculate the ACF for lags between 1 and 24 (inclusive)
+autocorrelation <- acf(na.omit(log(ercot_data$wind)), lag.max=(24*31*12), plot=FALSE)
+
+# Plot figure
+plot(autocorrelation,
+     main="Autocorrelation",
+     xlab="Lag Parameter",
+     ylab="ACF")
+```
+

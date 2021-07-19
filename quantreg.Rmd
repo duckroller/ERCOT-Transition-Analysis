@@ -463,3 +463,65 @@ for (i in names(hourly_west_qrs)) {
                             "hourly_west_quantreg_", i, ".csv", sep = ""))
 }
 ```
+
+
+
+
+```{r}
+
+read_plus <- function(flnm) {
+    read_csv(flnm) %>% 
+        mutate(filename = flnm)
+}
+```
+
+```{r}
+
+tbl_with_sources <-
+    list.files(path = "~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_results/",
+               pattern = "*.csv", 
+               full.names = T) %>% 
+    map_df(~read_plus(.))
+
+
+tbl_with_sources$X1 <- NULL
+
+
+tbl_with_sources$factorby <- strsplit(
+                              strsplit(
+                                gsub("^.*results/?",
+                                     "",
+                                     tbl_with_sources$filename[1]), 
+                                split='.', 
+                                fixed=TRUE),
+                              split="_",
+                              fixed = TRUE)[[1]][1]
+
+tbl_with_sources$factorval <- strsplit(
+                              strsplit(
+                                gsub("^.*results/?",
+                                     "",
+                                     tbl_with_sources$filename[1]), 
+                                split='.', 
+                                fixed=TRUE),
+                              split="_",
+                              fixed = TRUE)[[1]][4]
+
+tbl_with_sources$region <- strsplit(
+                              strsplit(
+                                gsub("^.*results/?",
+                                     "",
+                                     tbl_with_sources$filename[1]), 
+                                split='.', 
+                                fixed=TRUE),
+                              split="_",
+                              fixed = TRUE)[[1]][2]
+
+tbl_with_sources$filename <- NULL
+```
+
+```{r}
+write.csv(tbl_with_sources, 
+              file = paste("~/EER Thesis/ERCOT Transition Analysis/misc_stuff/regression_result_analysis/quantile_results.csv", sep = ""), row.names = FALSE)
+```
+

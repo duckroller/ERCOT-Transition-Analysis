@@ -1,5 +1,5 @@
-vars <- names(ercot_ts[,5:89])
-qs <- c(.1, .25, .5, .75, .9 ,.95, .99,1)
+vars <- names(ercot_ts[,5:91])
+qs <- c(.1, .25, .5, .75, .9 ,.95, .99, 1)
 
 pageWithSidebar(
     headerPanel('ERCOT Pricing Quantile Analysis Dashboard'),

@@ -1,0 +1,25 @@
+---
+title: "EGRID Timeseries"
+output: html_notebook
+---
+
+
+```{r}
+library(readr)
+library(tsibble)
+library(fable)
+library(lubridate)
+library(dplyr)
+library(feasts)
+```
+
+
+```{r}
+eGRID_ercot <- read_csv("eGRID_ercot.csv", 
+    col_types = cols(X1 = col_skip()))
+```
+
+```{r}
+eGRID_ercot_ts <- as_tsibble(eGRID_ercot, key = c(plant_name, fuel_type, operator_name), index = year)
+```
+

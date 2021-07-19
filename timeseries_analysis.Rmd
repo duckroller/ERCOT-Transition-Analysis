@@ -1,0 +1,62 @@
+---
+title: "Timeseries Analysis"
+author: "Eli Ramthun"
+date: "7/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Time Series Analysis
+
+```{r libraries}
+library(feasts)
+library(tsibble)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+```
+
+```{r}
+ercot_data <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
+
+ercot_data$datetime <- as.POSIXct(paste(ercot_data$year, "-", ercot_data$month, "-", ercot_data$day, " ", ercot_data$hourstart, sep=''), format="%Y-%m-%d %H", tz="America/Chicago", isdst=TRUE)
+
+#ercot_data <- na.omit(ercot_data)
+
+#ercot_data[ercot_data$Hour == 69392, ] <- NULL
+#ercot_data[ercot_data$Hour == 68670, ] <- NA
+#ercot_data[ercot_data$Hour == 69393, ] <- NA
+
+#ercot_data <- na.omit(ercot_data)
+
+ercot_data <- head(ercot_data,-5)
+
+ercot_data <- ercot_data[!(is.na(ercot_data$datetime)), ]
+
+ercot_data <- ercot_data[!(ercot_data$Hour == 42361 | ercot_data$Hour == 42362 | ercot_data$Hour == 42363 | ercot_data$Hour == 68669 | ercot_data$Hour == 68670 | ercot_data$Hour == 68392), ]
+
+
+ercot_ts <- as_tsibble(ercot_data, key=dst, index = datetime)
+
+
+ercot_ts <- fill_gaps(ercot_ts)
+
+```
+
+
+```{r seasons, echo=FALSE}
+ercot_ts[ercot_ts$dst ==0, ] %>% autoplot(wind)
+
+ercot_ts[ercot_ts$dst ==0, ] %>% gg_subseries(wind)
+
+
+ercot_ts[ercot_ts$dst ==0, ] %>% fill_gaps(wind = 0) %>% gg_season(wind)
+
+
+ercot_ts[(ercot_ts$dst == 0 & !(is.na(ercot_ts$wind))), ]  %>%
+  ACF(wind) %>%
+  autoplot()
+```

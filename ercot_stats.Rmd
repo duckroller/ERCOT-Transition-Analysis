@@ -20,6 +20,9 @@ library(ggridges)
 library(ggplot2)
 library(viridis)
 library(hrbrthemes)
+
+library(caret)
+library(corrplot)
 ```
 
 ```{r}
@@ -27,9 +30,19 @@ ercot_dataset <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
 ```
 
 ```{r}
+ercot_clean <- ercot_dataset[,-c(1:5)]
 
 ```
 
+
+```{r}
+cor_matrix<-abs(cor(na.omit(ercot_clean)))
+diag(cor_matrix)<-0
+```
+
+```{r}
+corrplot(cor_matrix, method="square")
+```
 
 
 ```{r}

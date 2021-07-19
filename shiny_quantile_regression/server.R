@@ -66,7 +66,7 @@ function(input, output, session) {
     
     output$quantile_plot <- renderPlot({
       print(quantile_summary())
-      plot(quantile_summary())#, se = "boot")
+      plot(quantile_summary())#, ylim=c(-1,0))#, se = "boot")
     })
     
     output$quantile_plot2 <- renderPlot({

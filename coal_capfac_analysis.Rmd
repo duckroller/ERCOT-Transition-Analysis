@@ -16,10 +16,17 @@ library(ggplot2)
 library(zoo)
 library(quantreg)
 library(GGally)
+library(cowplot)
+library(ggpubr)
 ```
 
 ```{r}
 ercot_data <- read.csv("data/ERCOT_Dataset_8June2021.csv", na.strings = ".")
+
+ercot_data <- ercot_data[!(ercot_data$dst == 1), ]
+
+ercot_data <- head(ercot_data, -6)
+
 egrid_data <- read_csv("data/eGRID_files/eGRID_ercot.csv")
 egrid_data <- egrid_data[egrid_data$fuel_type == "coal" & egrid_data$year >= 2011, ]
 
@@ -43,8 +50,15 @@ monthly_sum_coal_generation <- aggregate(coal ~ year + month, data=ercot_data, s
 
 monthly_sum_generation <- aggregate(cbind(coal,wind,gas,nuclear,solar) ~ year + month, data=ercot_data, sum)
 
-generation_ts <- zoo(monthly_sum_generation, order.by = yearmon(monthly_sum_generation$year+(monthly_sum_generation$month-1)/12))
+ercot_data$dt <- as.POSIXct(paste(ercot_data$year, "-", ercot_data$month, "-", ercot_data$day, " ", ercot_data$hourstart, sep=''), format="%Y-%m-%d %H", tz="America/Chicago", isdst=TRUE)
 
+hourly_data <- subset(ercot_data[ ,c("dt","coal","wind","gas","nuclear","solar","RTM_price_weighted_Hub","henry")])
+
+#generation_ts <- zoo(monthly_sum_generation, order.by = yearmon(monthly_sum_generation$year+(monthly_sum_generation$month-1)/12))
+
+generation_ts <- zoo(hourly_data, dt)
+
+generation_ts <- aggregate(generation_ts, identity, tail, 1)
 
 
 #goal_gen_ts <- zoo(monthly_sum_coal_generation, order.by = yearmon(monthly_sum_coal_generation$year+(monthly_sum_coal_generation$month-1)/12))
@@ -69,47 +83,74 @@ generation_ts <- zoo(monthly_sum_generation, order.by = yearmon(monthly_sum_gene
 ```
 
 ```{r}
-z <- read.zoo(existcapacity_annual, FUN = as.numeric)
 
-m <- na.approx(merge(z, zoo(, c(kronecker(time(z), 0:11/12, "+")))))
-time(m) <- as.Date(as.yearmon(time(m)), frac = 1)
-time(generation_ts) <- as.Date(time(generation_ts), frac= 1)
-n <- merge(m, generation_ts)
-colnames(n)[1] <- "coal_capacity"
+monthly_datetime <- function(y) {
+  return(as.POSIXct(paste(y,"-", 1,"-", 1, " 00:01:00", sep = ""),origin = "1970-01-01"))
+}
+
+z <- read.zoo(tail(existcapacity_annual,-1), FUN = monthly_datetime)
+
+#blank <- zoo(seq(as.POSIXct("2011-01-01 00:00:00", origin = "1970-01-01"), as.POSIXct("2019-12-31 11:00:00", origin = "1970-01-01"), by="hour"))
+
+
+#m <- na.approx(merge(z, zoo(, c(kronecker(time(z), 0:11/12, "+")))))
+
+m <- na.locf(merge(z,generation_ts))
+
+#time(m) <- as.Date(as.yearmon(time(m)), frac = 1)
+#time(generation_ts) <- as.Date(time(generation_ts), frac= 1)
+#n <- na.locf(merge(m, generation_ts))
+colnames(m)[1] <- "coal_capacity"
 #napkin math - ~730.5 hours per month to convert from MWh to MW
-n$coal_cf <- (n$coal/730.5)/n$coal_capacity
+m <- m[-c(1:2),-2]
 
-n$year <- as.factor(n$year)
-n$month <- as.factor(n$month)
+storage.mode(m) <- "numeric"
+
+
+m$coal_cf <- (m$coal/730.5)/m$coal_capacity
+
+#m$year <- as.factor(n$year)
+#m$month <- as.factor(n$month)
 ```
 
 Data aggregated, let's plot it for sanity:
 
 ```{r}
-autoplot(na.omit(scale(n)))
+autoplot(na.omit(scale(m)))
 ```
 
 ```{r}
-ggpairs(n)
+ggpairs(m)
 ```
 
 ```{r}
 
-n <- na.omit(n)
+scaled_ts <- scale(m)
 
-scaled_ts <- scale(n)
+Y.sc = cbind(scaled_ts$coal_cf)
+X.sc = cbind(scaled_ts$wind, scaled_ts$gas, scaled_ts$nuclear, scaled_ts$solar)
 
-Y = cbind(scaled_ts$coal_cf)
-X = cbind(scaled_ts$wind, scaled_ts$gas, scaled_ts$nuclear, scaled_ts$solar)
+QR.sc=rq(Y~X, tau=c(0.1, 0.25, 0.5, 0.75, 0.85, 0.95))
+
+sumQR.sc=summary(QR.sc)
+
+Y = cbind(m$coal_cf)
+X = cbind(m$wind, m$gas, m$nuclear, m$solar)
 
 QR=rq(Y~X, tau=c(0.1, 0.25, 0.5, 0.75, 0.85, 0.95))
 
 sumQR=summary(QR)
+
+
+
 ```
+## Comparing Scaled Regression with raw values
 
 ```{r}
 plot(sumQR)
+plot(sumQR.sc)
 ```
+## Just comparing coal CF with wind gen
 
 ```{r}
 Y = cbind(scaled_ts$coal_cf)
@@ -121,4 +162,24 @@ sumQR=summary(QR)
 
 plot(sumQR)
 ```
+
+
+
+```{r}
+
+p5 <- ggscatter(scaled_ts, x = "wind", y = "coal_cf", alpha=0.01,
+                add = "reg.line", conf.int = TRUE, 
+                cor.coef = TRUE, cor.method = "pearson",
+                xlab = "Hourly Wind Generation (scaled)", 
+                ylab = "Coal Capacity Factor (scaled)") +
+                theme_bw() +
+                ggtitle("Correlating Wind Generation and Coal Capacity Factors in ERCOT", 
+                        subtitle = "2011 - 2020. Data: ERCOT")
+
+p5
 ```
+
+```{r}
+write.zoo(m, file = "~/EER Thesis/ERCOT Transition Analysis/data/Cleaned Data/calculated_coal_cfs.csv", sep=",")
+```
+
